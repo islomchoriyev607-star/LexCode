@@ -2,6 +2,13 @@
 
 Yangi yozuv eng yuqoriga yoziladi. Tartib: `ISH_TARTIBI.md`. Ishni boshlashdan oldin `jurnal/1-noutbuk.md` ni oʻqing.
 
+## 2026-11-21 13:00 — 3 kalit tuzatishlari va audit
+- **Nima qilindi:** "Idoraga yuborish (3 kalit)" tugmasi har darajada (bot + Mini App navigatori). 2-kalit past ball bersa — keyingi matn oʻsha murojaatga qoʻshiladi va qayta baholanadi (koʻpi bilan 3 marta), watcher `k2_more` ni ham koʻradi. Audit topilmalari tuzatildi: ruscha "Государственный…" sud deb topilmaydi, turi aytilmagan sud → fuqarolik sudi, Toshkentdan 25 km uzoqda baza ishlatilmaydi, ОВД/полиция taniladi, K3_ASK ru matni tiklandi.
+- **Qaysi fayllar:** `bot/keys.py`, `bot/main.py`, `bot/navflow.py`, `bot/store.py`, `bot/i18n.py`, `bot/webapi.py`, `webapp/index.html`
+- **Sinaldi:** auditor (A–G): kritik yoʻq, 10/10 test ✅; tuzatishlardan keyin test_danger, test_script, test_validate, test_navflow, test_navapi, test_webapi ✅.
+- **1-noutbuk uchun (README):** `data/offices.json` OpenStreetMap'dan — README'ga "© OpenStreetMap contributors, ODbL" atributsiyasini qoʻshing (public repo). `CLAUDE.md` dagi "Boʻsh: CLINIC_CHAT_ID, AUTHORITY_CHAT_ID" eskirgan — ikkalasi ulangan.
+- **Ochiq savol / xavf:** 3 kalit zanjiri Telegram'da oxirigacha hali sinalmagan.
+
 ## 2026-11-21 — Mini App UI, transport va idoralar bazasi, kutish ekrani
 - **Nima qilindi:**
   - **Mini App UI:** 3D shar (Three.js) olib tashlandi; ekran chetida ong osti darajasidagi neon nur (Weber ΔL/L ≈ 0.02, σ = 9px, 14 s aylanish); bitta shrift — Inter (Manrope/Unbounded da қ, ғ, ҳ, ў yoʻq edi); `viewport` meta qoʻshildi — telefonda ekrandan chiqib ketish tuzatildi.

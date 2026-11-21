@@ -11,7 +11,7 @@ Vaqt: har slaydga ~40–60 soniya, jami 5–6 daqiqa.
 "Assalomu alaykum. Biz — LexCode jamoasi, loyihamiz — Huquqiy Navigator. Huquqi buzilgan odam qayerga, qachon va qanday murojaat qilishni bilmaydi. Biz unga choʻntagidagi yoʻlboshchini beramiz — Telegram bot va Mini App."
 
 **2. Biz kimmiz (Islom)**
-"Jamoada yuristlar va dasturchi-dizayner bor. Foydalanuvchi vaziyatini yozadi, gapiradi yoki skrinshot yuboradi. AI uni lex.uz dagi amaldagi qonun bilan solishtiradi, yoʻl koʻrsatadi va tayyor arizani PDF qilib beradi. Har bir modda lex.uz havolasi bilan; bot hukm chiqarmaydi."
+"Jamoada yuristlar va dasturchi-dizayner bor. Foydalanuvchi vaziyatini yozadi, gapiradi yoki skrinshot yuboradi. AI uni lex.uz dagi amaldagi qonun bilan solishtiradi va yoʻl koʻrsatadi: eng yaqin idoraning aniq manzili, u yerga qaysi avtobus yoki metro bilan borish, muddat va tayyor ariza PDF koʻrinishida. Har bir modda lex.uz havolasi bilan; bot hukm chiqarmaydi."
 
 **3. Muammo (Shaʼbona)**
 "2026-yilning 8 oyida Prezident Xalq qabulxonalariga 557 ming murojaat kelgan. Ularning 14–16 foizi takroriy, 20 foizga yaqini oddiy huquqiy tushuntirish bilan yopiladi. Imtiyozli transport kartasi arizalarining 64,7 foizi rad etilgan. Sabab — odamlar qayerga va qanday yozishni bilmaydi."
@@ -20,13 +20,13 @@ Vaqt: har slaydga ~40–60 soniya, jami 5–6 daqiqa.
 "TAM — internetdan foydalanadigan 24,4 mln voyaga yetgan fuqaro. SAM — my.gov.uz dagi 15 mln foydalanuvchi, ular onlayn murojaatga tayyor. SOM — 1-yilda SAM ning 1 foizi (150 ming), 3-yilda 3 foizi (450 ming). Asosiy auditoriya: ishchilar, talabalar, kichik biznes."
 
 **5. Raqobatchilar (Mirsoat)**
-"Umumiy AI chatbotlar tez, lekin Oʻzbekiston qonunini bilmaydi va modda raqamini oʻylab topadi. Advokat ishonchli, lekin qimmat va hammaga yetmaydi. Biz ikkalasining kuchini birlashtiramiz: AI tezligi va har modda bazadan tekshiriladi."
+"Umumiy AI chatbotlar tez, lekin Oʻzbekiston qonunini bilmaydi va modda raqamini oʻylab topadi. Advokat ishonchli, lekin qimmat va hammaga yetmaydi. Biz ikkalasining kuchini birlashtiramiz: AI tezligi va har modda bazadan tekshiriladi. Ikkalasida ham yoʻq narsa — eng yaqin idoragacha jamoat transporti marshruti."
 
 **6. Monetizatsiya (Shaʼbona)**
 "Fuqaro uchun asosiy yoʻl koʻrsatish bepul — xavf holatida hech qachon pul soʻralmaydi. Daromad: premium (oyiga 29 ming soʻm yoki bitta ariza 15 ming soʻm), tashkilotlarga litsenziya (oyiga 1,5–3 mln soʻm) va chop etish hamkorlaridan 10 foiz komissiya."
 
 **7. KPI (Islom)**
-"Hozir MVP ishlaydi: bot va Mini App, 7 ta qonun, 2 942 modda, 4 til. 6 oyda — 10 ming foydalanuvchi va 2 ta universitet bilan pilot. 1 yilda — 150 ming foydalanuvchi, 3 yilda — 450 ming va davlat portallari bilan integratsiya."
+"Hozir MVP ishlaydi: bot va Mini App, 7 ta qonun, 2 942 modda, 4 til, Toshkentdagi 156 ta idora manzili. 6 oyda — 10 ming foydalanuvchi va 2 ta universitet bilan pilot. 1 yilda — 150 ming foydalanuvchi, 3 yilda — 450 ming va davlat portallari bilan integratsiya."
 
 **8. Jamoa (Islom)**
 "Islom — loyiha rahbari, yurisprudensiya 2-kurs, Yuridik klinikada 1 yil tajriba. Mirsoat — CTO va dizayner, 2 yil dizayn tajribasi. Shaʼbona — biznes analitik va yurist. 3 oydan beri birgamiz. Endi jonli demoni koʻrsatamiz."
@@ -64,6 +64,15 @@ Qonunlar lex.uz dan avtomatik yuklab olinadi va bazaga qayta yoziladi (`tools/le
 
 **Nechta qonun bor? Yetarlimi?**
 Hozir 7 ta: Mehnat, Fuqarolik (2 qism), Jinoyat, Maʼmuriy javobgarlik kodekslari, Isteʼmolchilar huquqlari va Murojaatlar toʻgʻrisidagi qonunlar — jami 2 942 modda. Bular eng koʻp uchraydigan murojaatlarni qamraydi. Reja — 50+ qonun.
+
+**Idoralar manzili qayerdan? Transport qanday?**
+- Toshkent boʻyicha 156 ta idora bazada: 25 ta sud, 116 ta IIB boʻlimi va tayanch punkti, 15 ta FHDYO. Manba — OpenStreetMap ochiq maʼlumotlari.
+- Foydalanuvchi joylashuvini yuborsa yoki tumanini yozsa, bot eng yaqin idorani topadi.
+- "Qanday boraman" tugmasi Yandex xaritada shu idoragacha jamoat transporti marshrutini ochadi: avtobus va metro raqamlari bilan.
+- Bazada yoʻq idoralar uchun — atrofdagi joylar qidiruvi. Viloyatlar keyingi bosqichda qoʻshiladi.
+
+**Arizani qayerda chop etaman?**
+"Chop etish joylari" tugmasi atrofdagi nusxa koʻchirish markazlarini xaritada koʻrsatadi. Rejada — hamkor markazlar bilan shartnoma: ariza ularga toʻgʻridan-toʻgʻri yuboriladi, fuqaro faqat kelib oladi.
 
 **Nega Telegram?**
 Oʻzbekistonda eng keng tarqalgan messenjer. Ilova oʻrnatish shart emas, ovozli xabar odatiy.
@@ -119,8 +128,8 @@ Yoʻq — toʻldiramiz. my.gov.uz murojaatni qabul qiladi, biz esa odamga qaysi 
 
 **Keyingi 6 oyda nima qilasiz?**
 - 50+ qonun.
-- Idoralar manzili va jamoat transporti yoʻnalishi.
-- Chop etish hamkorlari.
+- Viloyatlardagi idoralar manzili (hozir Toshkent — 156 ta).
+- Chop etish hamkorlari bilan shartnoma.
 - 2 ta universitet bilan pilot.
 - 10 ming foydalanuvchi.
 

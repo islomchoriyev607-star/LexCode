@@ -146,7 +146,7 @@ text(s, 3.3, 2.52, 5.8, 0.8, 'Huquqingiz buzilganda — qayerga, qachon va qanda
      'koʻrsatuvchi AI navigator', size=13, color=SILVER, italic=True)
 text(s, 3.3, 3.42, 5.8, 0.35, [[('Telegram: ', {'color': MUTED}), ('@lex_nav_bot', {'color': SKY, 'bold': True}),
                                 ('  ·  bot + Mini App', {'color': MUTED})]], size=12, conv=True)
-for i, (big, small) in enumerate([('2 942', 'modda (lex.uz)'), ('4 til', 'kirill · lotin · ru · en'),
+for i, (big, small) in enumerate([('2 942', 'modda (lex.uz)'), ('156', 'idora manzili · Toshkent'),
                                   ('112·102·103', 'xavfda — AI dan oldin')]):
     cx = 3.3 + i * 1.97
     rect(s, cx, 3.92, 1.85, 0.62, TINT, EDGE)
@@ -171,7 +171,7 @@ text(s, 4.1, 1.52, 5.4, 0.5, 'Choʻntakdagi huquqiy yoʻlboshchi', size=16, bold
 rect(s, 4.1, 2.08, 5.4, 0.04, EDGE)
 bul = [
     ('Gapiring, yozing yoki skrinshot yuboring — ', 'AI vaziyatni lex.uz dagi amaldagi qonun bilan solishtiradi'),
-    ('Yoʻl koʻrsatadi — ', 'qayerga, qachon, qanday borish; tayyor ariza PDF koʻrinishida'),
+    ('Yoʻl koʻrsatadi — ', 'eng yaqin idora manzili, avtobus/metro marshruti, muddat va tayyor ariza (PDF)'),
     ('Ishonchli — ', 'har modda lex.uz havolasi bilan; jiddiy holatda Yuridik klinika yuristi tasdiqlaydi'),
 ]
 text(s, 4.1, 2.25, 5.45, 2.4, [[('▸  ', {'color': BLUE, 'bold': True}), (a, {'bold': True, 'color': WHITE}),
@@ -245,19 +245,21 @@ feat = [
     ('Amaldagi Oʻzbekiston qonuni, lex.uz havolasi bilan', (1, 0, 1)),
     ('Qadamma-qadam yoʻl va muddat boʻyicha kuzatuv', (1, 0, 1)),
     ('Idoraga mos tayyor ariza (PDF)', (1, 0, 1)),
+    ('Eng yaqin idora va avtobus/metro marshruti', (1, 0, 0)),
     ('Bepul, 24/7, ovoz va oʻzbek tilida', (1, 1, 0)),
 ]
+RH = 0.5  # qator qadami (5 qator sigʻishi uchun)
 for i, (name, marks) in enumerate(feat):
-    y = 1.80 + i * 0.62
+    y = 1.80 + i * RH
     f = CARD if i % 2 == 0 else CARD2
-    rect(s, 0.5, y, 2.9, 0.58, f, EDGE)
-    text(s, 0.6, y, 2.75, 0.58, name, size=11, color=BODY, anchor=MSO_ANCHOR.MIDDLE)
+    rect(s, 0.5, y, 2.9, RH - 0.03, f, EDGE)
+    text(s, 0.6, y, 2.75, RH - 0.03, name, size=10.5, color=BODY, anchor=MSO_ANCHOR.MIDDLE)
     for (x, w, _, _), ok in zip(cols[1:], marks):
-        rect(s, x, y, w, 0.58, f, EDGE)
-        check(s, x, y, w, 0.58, ok)
-rect(s, 0.5, 4.32, 9.2, 0.64, TINT, EDGE)
-rect(s, 0.5, 4.32, 9.2, 0.05, BLUE)
-text(s, 0.5, 4.36, 9.2, 0.6, [[('Nega biz? ', {'bold': True, 'color': WHITE}),
+        rect(s, x, y, w, RH - 0.03, f, EDGE)
+        check(s, x, y, w, RH - 0.03, ok)
+rect(s, 0.5, 4.36, 9.2, 0.6, TINT, EDGE)
+rect(s, 0.5, 4.36, 9.2, 0.05, BLUE)
+text(s, 0.5, 4.38, 9.2, 0.58, [[('Nega biz? ', {'bold': True, 'color': WHITE}),
                                ('AI qonunni oʻylab topmaydi — har modda bazadan tekshiriladi; advokatdan farqli — '
                                 'daqiqalar ichida va bepul.', {'color': SILVER})]], size=13, align=PP_ALIGN.CENTER,
      anchor=MSO_ANCHOR.MIDDLE)
@@ -294,7 +296,7 @@ header(s, 7, 'Maqsadlar va KPI', 'Realistik reja: 1–3 yil, SAM ning 1% → 3% 
 rect(s, 0.8, 2.9, 8.4, 0.04, EDGE)
 text(s, 9.1, 2.74, 0.3, 0.32, '▶', size=14, color=MUTED, font='Segoe UI Symbol', conv=False)
 mil = [  # x, yuqorida?, rang, sarlavha, satrlar
-    (0.55, True, BLUE, 'Hozir', ['MVP ishlaydi: bot + Mini App', '7 qonun · 2 942 modda · 4 til']),
+    (0.55, True, BLUE, 'Hozir', ['MVP: bot + Mini App · 4 til', '2 942 modda · 156 idora']),
     (2.75, False, AMBER, '6 oy', ['10 000 foydalanuvchi', '2 universitet bilan pilot']),
     (4.95, True, SKY, '1 yil', ['150 000 foydalanuvchi', '≈ 0,6 mlrd soʻm daromad']),
     (7.15, False, GREEN, '3 yil', ['450 000 foydalanuvchi', '≈ 4 mlrd soʻm · B2G integratsiya']),
@@ -312,7 +314,7 @@ for x, up, c, t1, lines in mil:
     rect(s, x, y, 1.9, 0.04, c)
     text(s, x, y + 0.06, 1.9, 0.28, t1, size=12, bold=True, color=c, font='Consolas', align=PP_ALIGN.CENTER)
     text(s, x + 0.05, y + 0.36, 1.8, 0.52, lines, size=10, color=BODY, align=PP_ALIGN.CENTER)
-tip(s, 'Keyingi qadamlar: 50+ qonun, idoralar manzili va transport yoʻnalishi, chop etish hamkorlari, kuchli AI model.',
+tip(s, 'Keyingi qadamlar: 50+ qonun, viloyatlar idoralari, chop etish hamkorlari bilan shartnoma, kuchli AI model.',
     y=4.98)
 
 # =========================== 8. Jamoa ===========================

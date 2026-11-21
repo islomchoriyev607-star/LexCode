@@ -2,6 +2,18 @@
 
 Yangi yozuv eng yuqoriga yoziladi. Tartib: `ISH_TARTIBI.md`.
 
+## 2026-11-21 — Prezentatsiya tayyor (Pitch Day)
+- **Nima qilindi:** `prezentatsiya/Huquqiy_Navigator_LexCode.pdf` va `.pptx` — 8 slayd.
+  - Tuzilma tashkilotchilar namunasi boʻyicha: sarlavha, biz kimmiz, muammo, bozor, raqobatchilar, monetizatsiya, KPI, jamoa.
+  - Dizayn: LexCode ranglari, yangi lotin (OʻRQ–1184), `#LexHackathon #Hackathon #Tashkent #event`.
+  - Ogʻzaki nutq va hakamlar savollariga javoblar: `prezentatsiya/nutq_va_savol_javob.md`.
+- **Logolar:** `brand/navigator_logo.svg|png` (yangi, LexCode uslubida), `brand/lexcode_logo.png`, `brand/lexhackathon_logo.png`, `brand/adliya_logo.png`.
+- **Qayta yasash:** `python prezentatsiya/build_slides.py` (python-pptx, pillow kerak).
+- **Ochiq savol:**
+  - 3-slayddagi statistika havolalarini taqdimotdan oldin tekshirish kerak.
+  - Jamoa tajribasi (8-slayd) — Islom tasdiqladi ✅.
+- **2-noutbuk uchun:** kodga taʼsiri yoʻq. Bot 14:00 checkpointda ishlab turishi kerak.
+
 ## 2026-11-21 — Bot serveri 2-noutbukka koʻchdi
 - **Nima qilindi:** qaror — bot **faqat 2-noutbukda** ishlaydi; 1-noutbukda faqat hujjatlar va prezentatsiya. 1-noutbukda bot va tunnel toʻxtatilgan (tekshirildi). `ISH_TARTIBI.md` ga qoida qoʻshildi.
 - **2-noutbuk uchun:**

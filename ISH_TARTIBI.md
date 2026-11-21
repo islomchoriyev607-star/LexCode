@@ -9,7 +9,7 @@ Bitta GitHub akkaunt, ikki noutbuk, har birida alohida Claude Code. Claude'lar b
 | **Vazifa** | Hujjatlar | Kod + **bot serveri** |
 | **Bot ishlaydimi?** | ❌ **Yoʻq — hech qachon ishga tushirilmaydi** | ✅ Ha, yagona server (`tools\run_demo.py`) |
 | **Tarmoq (branch)** | `hujjat-qism` | `kod-qism` |
-| **Faqat shu fayllarni oʻzgartiradi** | `README.md`, `HANDOFF.md`, `BUILD_PLAN.md`, `docs/`, `prezentatsiya/`, `jurnal/1-noutbuk.md` | `bot/`, `webapp/`, `tools/`, `data/`, `eval/`, `requirements.txt`, `.env.example`, `jurnal/2-noutbuk.md` |
+| **Faqat shu fayllarni oʻzgartiradi** | `README.md`, `HANDOFF.md`, `BUILD_PLAN.md`, `docs/`, `prezentatsiya/`, `brand/`, `jurnal/1-noutbuk.md` | `bot/`, `webapp/`, `tools/`, `data/`, `eval/`, `requirements.txt`, `.env.example`, `jurnal/2-noutbuk.md` |
 
 **Umumiy fayllar** (`CLAUDE.md`, `ISH_TARTIBI.md`, `.gitignore`) faqat kelishib oʻzgartiriladi. Kim oʻzgartirsa, oʻz jurnaliga yozadi.
 

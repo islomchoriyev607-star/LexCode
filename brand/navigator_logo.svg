@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Huquqiy Navigator — LexCode uslubida: kompas (yoʻl koʻrsatish) + adolat tarozisi.
+       Ranglar LexCode logosiga mos: koʻk #1E6BFF, kumush metall, qora fon, koʻk yorugʻlik. -->
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.45" stop-color="#C9D1DC"/>
+      <stop offset="0.55" stop-color="#8E99A8"/>
+      <stop offset="1" stop-color="#E6EAF0"/>
+    </linearGradient>
+    <linearGradient id="silverH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9AA5B4"/>
+      <stop offset="0.5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#9AA5B4"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6FB1FF"/>
+      <stop offset="0.5" stop-color="#1E6BFF"/>
+      <stop offset="1" stop-color="#0A3FB8"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1E6BFF" stop-opacity="0"/>
+      <stop offset="0.25" stop-color="#1E6BFF"/>
+      <stop offset="0.7" stop-color="#8FC2FF"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#1E6BFF" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#1E6BFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#1E6BFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#05070D"/>
+  <circle cx="512" cy="500" r="430" fill="url(#glow)"/>
+
+  <!-- Orbita (LexCode dagi kabi egilgan yorugʻ chiziq) — orqa qismi -->
+  <g transform="rotate(-18 512 500)">
+    <path d="M132 500 A380 150 0 0 1 892 500" fill="none" stroke="url(#orbit)" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+  </g>
+
+  <!-- Kompas halqasi -->
+  <circle cx="512" cy="500" r="300" fill="#0A0F1C" stroke="url(#silver)" stroke-width="18"/>
+  <circle cx="512" cy="500" r="268" fill="none" stroke="#1E6BFF" stroke-width="4" opacity="0.7"/>
+  <!-- Daraja belgilari -->
+  <g stroke="#8E99A8" stroke-width="6" stroke-linecap="round">
+    <line x1="512" y1="236" x2="512" y2="262"/><line x1="512" y1="738" x2="512" y2="764"/>
+    <line x1="248" y1="500" x2="274" y2="500"/><line x1="750" y1="500" x2="776" y2="500"/>
+  </g>
+
+  <!-- Kompas yulduzi: shimol — koʻk (yoʻl), qolganlari kumush -->
+  <polygon points="512,214 556,470 512,500 468,470" fill="url(#blue)"/>
+  <polygon points="512,214 512,500 468,470" fill="#0A3FB8" opacity="0.55"/>
+  <polygon points="512,786 556,530 512,500 468,530" fill="url(#silver)" opacity="0.85"/>
+  <polygon points="226,500 482,456 512,500 482,544" fill="url(#silver)" opacity="0.85"/>
+  <polygon points="798,500 542,456 512,500 542,544" fill="url(#silver)" opacity="0.85"/>
+
+  <!-- Adolat tarozisi (markazda, kumush) -->
+  <g>
+    <rect x="352" y="408" width="320" height="14" rx="7" fill="url(#silverH)"/>
+    <!-- chap pallasi -->
+    <line x1="368" y1="416" x2="330" y2="520" stroke="#C9D1DC" stroke-width="4"/>
+    <line x1="368" y1="416" x2="406" y2="520" stroke="#C9D1DC" stroke-width="4"/>
+    <path d="M316 520 Q368 572 420 520 Z" fill="url(#silver)"/>
+    <!-- oʻng pallasi -->
+    <line x1="656" y1="416" x2="618" y2="520" stroke="#C9D1DC" stroke-width="4"/>
+    <line x1="656" y1="416" x2="694" y2="520" stroke="#C9D1DC" stroke-width="4"/>
+    <path d="M604 520 Q656 572 708 520 Z" fill="url(#silver)"/>
+    <circle cx="512" cy="415" r="22" fill="#0A0F1C" stroke="url(#silver)" stroke-width="9"/>
+    <circle cx="512" cy="415" r="7" fill="#6FB1FF"/>
+  </g>
+
+  <!-- Orbita — oldingi qismi (halqa ustidan oʻtadi) -->
+  <g transform="rotate(-18 512 500)">
+    <path d="M892 500 A380 150 0 0 1 132 500" fill="none" stroke="url(#orbit)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M892 500 A380 150 0 0 1 132 500" fill="none" stroke="#8FC2FF" stroke-width="16" stroke-linecap="round" opacity="0.5" filter="url(#soft)"/>
+  </g>
+
+  <!-- Pastki yorugʻlik chizigʻi (LexCode dagi kabi) -->
+  <ellipse cx="512" cy="900" rx="230" ry="5" fill="#1E6BFF" filter="url(#soft)"/>
+  <ellipse cx="512" cy="900" rx="150" ry="2" fill="#BFDBFF"/>
+</svg>

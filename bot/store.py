@@ -78,6 +78,13 @@ def set_status(case_id: int, status: str) -> None:
     con().commit()
 
 
+def append_text(case_id: int, extra: str) -> None:
+    """2-kalit uchun aniqlashtirish: murojaat matniga qoʻshiladi (yangi murojaat ochilmaydi)."""
+    con().execute("UPDATE cases SET text = COALESCE(text, '') || ?, application = NULL, updated = ? WHERE id = ?",
+                  ('\n\nQoʻshimcha maʼlumot: ' + extra, time.time(), case_id))
+    con().commit()
+
+
 def save_application(case_id: int, text: str) -> None:
     con().execute('UPDATE cases SET application = ?, updated = ? WHERE id = ?', (text, time.time(), case_id))
     con().commit()

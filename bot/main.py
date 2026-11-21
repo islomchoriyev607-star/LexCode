@@ -177,6 +177,9 @@ async def on_any(m: Message) -> None:
     if m.text and pipeline.is_danger(m.text) and store.get_pending(uid):
         await m.answer(t(lang, 'EMERGENCY'))  # suhbat oʻrtasida ham xavf belgisi — darhol 112/102/103
     pending = store.get_pending(uid)
+    if pending and pending.get('stage') == 'k2_more' and m.text:
+        await keys.add_details(m, pending['case'], lang)  # 2-kalit: aniqlashtirish shu murojaatga qoʻshiladi
+        return
     if pending and (m.text or m.location) and await navflow.handle_pending(m, pending, lang):
         return  # navigator kutayotgan javob (savolga javob, tuman, savol)
     if pending:
@@ -263,8 +266,7 @@ async def on_role(c: CallbackQuery) -> None:
 
 def card_kb(case_id: int, level: str, lang: str) -> InlineKeyboardMarkup:
     rows = [[InlineKeyboardButton(text=t(lang, 'BTN_APP'), callback_data=f'app:{case_id}')]]
-    if level in ('jiddiy', 'xavf'):
-        rows.append([keys.escalate_kb(case_id, lang)])
+    rows.append([keys.escalate_kb(case_id, lang)])  # har darajada: idoraga baribir faqat 3 kalitdan keyin ketadi
     rows.append([InlineKeyboardButton(text=t(lang, 'BTN_NEW'), callback_data='new')])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

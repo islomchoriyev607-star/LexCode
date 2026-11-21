@@ -17,9 +17,9 @@ async def main():
     sel = [int(x) for x in sys.argv[1:]] or range(len(CASES))
     for i in sel:
         role, text = CASES[i]
-        t = time.time()
+        t0 = time.time()
         r = await pipeline.analyze(text, role)
-        dt = time.time() - t
+        dt = time.time() - t0
         print(f'\n######## {i+1}. [{role}] {text[:70]}…')
         print(f'vaqt {dt:.1f}s | daraja {r.level} | xavf {r.danger} | so\'rovlar {r.triage.get("sorovlar")} | ishonch {r.answer.get("ishonch")}')
         print('berilgan:', [f'{a.abbr} {a.num}' for a in r.articles])

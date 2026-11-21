@@ -1,10 +1,11 @@
+<!doctype html>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Huquqiy Navigator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap&subset=cyrillic-ext">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 /* Maket: telefon ustuni (≤520px), pastda suzuvchi shisha dock. Ikki mavzu: yorug' (bare :root) va qorong'i.
    Unumdorlik: backdrop-filter faqat dock va sheet'da; animatsiyalar faqat transform/opacity (kompozitor). */
@@ -15,8 +16,8 @@
   --hi: rgba(255, 255, 255, .95); --shadow: rgba(52, 38, 120, .16); --scrim: rgba(20, 16, 40, .32);
   --violet: #6b4bff; --cyan: #0a9fc2; --gold: #d38f12; --good: #0e9a6a; --warn: #b77d00; --bad: #e0244c;
   --ask-bg: #ffffff; --aur-1: rgba(107, 75, 255, .20); --aur-2: rgba(10, 159, 194, .14); --aur-3: rgba(211, 143, 18, .10);
-  --font-display: 'Unbounded', 'Manrope', system-ui, sans-serif;
-  --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
   --r: 22px; --dock-h: 74px;
   --spring: cubic-bezier(.22, 1, .36, 1);
@@ -52,7 +53,10 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .app { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; min-height: 100%;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 12px calc(var(--dock-h) + 40px + env(safe-area-inset-bottom, 0px)); }
-.screen { display: grid; gap: 14px; animation: enter .5s var(--spring) both; }
+.screen { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; animation: enter .5s var(--spring) both; }
+/* Grid elementi sukut boʻyicha mazmunidan torayolmaydi (min-width: auto) — uzun soʻz/nowrap ekrandan chiqarib yuboradi */
+.screen > *, .icb, .info > span { min-width: 0; }
+.step-card, .info, .icb { overflow-wrap: anywhere; }
 @keyframes enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } }
 
 /* Suyuq shisha karta: yaltiroq qatlam fon qatlami sifatida (matn ustiga tushmaydi) */
@@ -75,12 +79,24 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .pill.demo { color: var(--gold); background: color-mix(in srgb, var(--gold) 13%, transparent); }
 .pill.live { color: var(--good); background: color-mix(in srgb, var(--good) 13%, transparent); }
 
-/* 3D shar */
-.hero { display: grid; place-items: center; height: 264px; touch-action: pan-y; }
-#orb { width: 264px; height: 264px; max-width: 100%; display: block; cursor: grab; }
-.orb-fallback { width: 168px; height: 168px; border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.75), transparent 28%), conic-gradient(var(--violet), var(--cyan), var(--gold), var(--violet)); }
-.lead { text-align: center; display: grid; gap: 6px; }
+/* Ekran chetidagi neon chiroq: konik gradient @property burchagi bilan aylanadi, mask faqat ramkani qoldiradi */
+@property --edge-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+/* Ong osti darajasi: Weber qonuni ΔL/L ≈ 0.02 (sezish chegarasi) atrofida. Blur ota elementda — mask chegarasi ham
+   Gauss bilan yuviladi (σ = 9px, 3σ ≈ 27px ichkarida nol). Aylanish 0.07 Hz — diqqatni tortmaydigan sekinlik. */
+.edge-wrap { position: fixed; inset: 0; z-index: 60; pointer-events: none; filter: blur(9px); opacity: .2;
+  transition: opacity 1.2s var(--spring); }
+:root[data-theme="light"] .edge-wrap { opacity: .12; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .edge-wrap { opacity: .12; } }
+.busy-app .edge-wrap { opacity: .42; }
+.edge { position: absolute; inset: 0; border-radius: 18px; padding: 6px;
+  background: conic-gradient(from var(--edge-a), #ff2bd6, #8b5cf6, #22d3ee, #34f5a0, #ffd23d, #ff6b3d, #ff2bd6);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: edgespin 14s linear infinite; }
+.busy-app .edge { animation-duration: 3s; }
+@keyframes edgespin { to { --edge-a: 1turn; } }
+@media (prefers-reduced-motion: reduce) { .edge { animation: none; } }
+.lead { text-align: center; display: grid; gap: 6px; padding-top: 22px; }
 .lead h2 { margin: 0; font: 700 clamp(19px, 5.6vw, 25px)/1.22 var(--font-display); text-wrap: balance; }
 .lead p { margin: 0 auto; max-width: 40ch; color: var(--ink-2); font-size: 14px; text-wrap: balance; }
 
@@ -94,6 +110,13 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .ask-glow .ring { width: 230%; animation: none; } /* xira qatlam qimirlamaydi: har kadrda blur qayta hisoblanmasin */
 .busy .ring { animation-duration: 1.4s; }
 @keyframes rot { to { transform: rotate(1turn); } }
+/* Kutish ekrani: foydalanuvchi nima boʻlayotganini koʻradi */
+.busy-ov { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 24px; background: var(--scrim);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: enter .3s var(--spring) both; }
+.busy-card { display: grid; justify-items: center; gap: 14px; max-width: 300px; padding: 26px 22px; border-radius: 22px; text-align: center;
+  background: var(--surface-2); border: 1px solid var(--edge); box-shadow: 0 18px 40px -18px var(--shadow); font-weight: 600; font-size: 15.5px; }
+.busy-card .spin { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--edge); border-top-color: var(--violet); animation: rot .9s linear infinite; }
+.busy-card svg.i { width: 38px; height: 38px; color: var(--good); }
 .ask-inner { position: relative; background: var(--ask-bg); border-radius: 22.5px; padding: 14px 14px 10px; display: grid; gap: 10px; }
 .field { position: relative; }
 .field textarea { width: 100%; min-height: 78px; max-height: 220px; resize: none; display: block; background: transparent; border: 0; outline: 0;
@@ -111,7 +134,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .send:disabled { opacity: .35; box-shadow: none; cursor: default; }
 .send:not(:disabled):active { transform: scale(.92); }
 
-.label { color: var(--ink-3); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
+.label { color: var(--ink-3); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
 .quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 6px; margin: 0 -2px; scroll-snap-type: x proximity; }
 .quick::-webkit-scrollbar { display: none; }
 .quick .chip { scroll-snap-align: start; }
@@ -136,7 +159,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 
 /* Natija */
 .head { padding: 16px 18px; display: grid; gap: 10px; }
-.badge { justify-self: start; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; padding: 5px 11px; border-radius: 999px; }
+.badge { justify-self: start; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
 .badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .lv-oddiy { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
 .lv-muhim { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, transparent); }
@@ -159,7 +182,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .law span { color: var(--ink-2); font-size: 13px; }
 .note { margin: 0; color: var(--ink-3); font-size: 12px; line-height: 1.5; }
 .actions { display: grid; gap: 10px; }
-.btn { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 14px; border-radius: 16px; font-weight: 800; font-size: 15px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 14px; border-radius: 16px; font-weight: 700; font-size: 15px; }
 .btn.primary { color: #fff; background: linear-gradient(135deg, var(--violet), var(--cyan)); box-shadow: 0 10px 24px -12px var(--violet); }
 .btn.danger { color: var(--bad); background: color-mix(in srgb, var(--bad) 11%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 38%, transparent); }
 .btn.ghost { background: var(--surface); border: 1px solid var(--edge); }
@@ -174,7 +197,7 @@ pre.doc { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1
 .key.wait .k { color: var(--gold); border-color: var(--gold); }
 .key b { display: block; font-size: 14.5px; }
 .key span { color: var(--ink-2); font-size: 12.5px; }
-.state { font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.state { font-size: 12px; font-weight: 700; color: var(--ink-3); }
 .key.ok .state { color: var(--good); } .key.wait .state { color: var(--gold); }
 
 /* Ro'yxatlar */
@@ -213,7 +236,7 @@ pre.doc { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1
   background: color-mix(in srgb, var(--bg-2) 72%, transparent); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
   box-shadow: inset 0 1px 0 var(--hi), 0 16px 36px -18px var(--shadow); }
 .tab { position: relative; display: grid; justify-items: center; gap: 3px; padding: 7px 0; border-radius: 18px; color: var(--ink-3);
-  font-size: 10.5px; font-weight: 800; transition: color .25s; }
+  font-size: 10.5px; font-weight: 700; transition: color .25s; }
 .tab svg.i { width: 22px; height: 22px; }
 .tab.active { color: var(--ink); }
 .tab::after { content: ""; position: absolute; bottom: 1px; width: 5px; height: 5px; border-radius: 50%; background: var(--violet);
@@ -234,7 +257,7 @@ pre.doc { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1
 /* ---------- Navigator ---------- */
 .screen.center { text-align: center; justify-items: center; }
 .screen.center .btn, .screen.center .two { width: 100%; }
-.eyebrow { margin: 0; color: var(--violet); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.eyebrow { margin: 0; color: var(--violet); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .lead.left { text-align: left; }
 .lead.left p { margin: 0; }
 .dots { display: flex; gap: 6px; justify-content: center; }
@@ -258,7 +281,7 @@ pre.doc { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1
 .rc-body b { font-size: 15px; }
 .rc-body > span { color: var(--ink-2); font-size: 13px; }
 .rc-meta { display: flex; gap: 8px; align-items: center; font-size: 12px !important; color: var(--ink-3) !important; }
-.rc-meta em { font-style: normal; font-weight: 800; color: var(--good); }
+.rc-meta em { font-style: normal; font-weight: 700; color: var(--good); }
 .chev { transform: rotate(180deg); color: var(--ink-3); }
 .mini-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .mini { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; font-size: 13px; font-weight: 700;
@@ -271,10 +294,10 @@ pre.doc { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1
 .infos { display: grid; gap: 10px; }
 .info { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14.5px; }
 .info svg.i { color: var(--violet); margin-top: 2px; }
-.info small { display: block; color: var(--ink-3); font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.info small { display: block; color: var(--ink-3); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .btn.big { padding: 17px; font-size: 16px; border-radius: 18px; }
 .icon-row { display: flex; gap: 10px; justify-content: center; }
-.icb { flex: 1; max-width: 120px; display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 16px; font-size: 12px; font-weight: 800;
+.icb { flex: 1; max-width: 120px; display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 16px; font-size: 12px; font-weight: 700;
   background: var(--surface); border: 1px solid var(--edge); color: var(--ink-2); }
 .icb svg.i { width: 22px; height: 22px; color: var(--violet); }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -310,7 +333,7 @@ body { font-size: 17px; }
 .seg.four { grid-template-columns: repeat(2, 1fr); }
 .seg.four button { padding: 11px 6px; font-size: 15px; }
 .mic { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 46px; min-width: 46px; padding: 0 12px; margin-left: auto;
-  border-radius: 999px; color: var(--violet); background: var(--surface-2); border: 1px solid var(--edge); font-weight: 800; }
+  border-radius: 999px; color: var(--violet); background: var(--surface-2); border: 1px solid var(--edge); font-weight: 700; }
 .mic svg.i { width: 22px; height: 22px; }
 .mic.on { color: #fff; background: var(--bad); border-color: transparent; animation: micpulse 1.2s ease-in-out infinite; }
 @keyframes micpulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--bad) 22%, transparent); } }
@@ -320,6 +343,7 @@ body { font-size: 17px; }
 </style>
 
 <div class="aurora" aria-hidden="true"></div>
+<div class="edge-wrap" aria-hidden="true"><div class="edge"></div></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></symbol>
   <symbol id="i-cases" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></symbol>
@@ -381,7 +405,6 @@ function applyTheme() {
   if (themePref === 'auto' && !TG) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', isDark() ? 'dark' : 'light');
   const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
   if (TG) { try { TG.setHeaderColor(bg); TG.setBackgroundColor(bg); TG.setBottomBarColor && TG.setBottomBarColor(bg); } catch (e) {} }
-  orb && orb.setTheme(isDark());
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 if (TG) { TG.ready(); TG.expand(); TG.onEvent('themeChanged', applyTheme); }
@@ -635,6 +658,15 @@ function ic(name, cls = '') {
   const u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#i-' + name); s.append(u); return s;
 }
 const haptic = (t = 'light') => { try { TG && TG.HapticFeedback.impactOccurred(t); } catch (e) {} };
+function busyOverlay(msg) {
+  document.body.classList.add('busy-app');
+  const text = el('span', { text: msg }), spin = el('i', { class: 'spin' });
+  const ov = el('div', { class: 'busy-ov', role: 'status', 'aria-live': 'polite' }, el('div', { class: 'busy-card' }, spin, text));
+  $('#layer').append(ov);
+  const close = () => { ov.remove(); document.body.classList.toggle('busy-app', state.tab === 'analyzing'); };
+  return doneMsg => { if (!doneMsg) return close(); haptic('medium'); text.textContent = doneMsg; spin.replaceWith(ic('check')); setTimeout(close, 1600); };
+}
+async function openWithBusy(msg, url) { haptic(); const done = busyOverlay(msg); await new Promise(r => setTimeout(r, 1100)); done(); openUrl(url); }
 function toast(msg) { const t = el('div', { class: 'toast', role: 'status', text: msg }); $('#layer').append(t); setTimeout(() => t.remove(), 2400); }
 
 // ===================== Fizika: prujina (yarim-oshkor Eyler, qat'iy qadam) =====================
@@ -798,10 +830,9 @@ async function demo(path, body) {
 function go(tab) { state.tab = tab; render(); }
 function render() {
   const screens = { clarify: Clarify, district: District, routes: Routes, step: Step, wait: Wait, closed: Closed, details: Details, home: Home, analyzing: Analyzing, result: Result, application: Application, keys: Keys, cases: Cases, laws: Laws, profile: Profile };
-  stopOrb(); // eski canvas DOMdan olib tashlanadi — shar har safar yangidan yaratiladi (aks holda boʻsh qoladi)
   $('#app').replaceChildren(Header(), (screens[state.tab] || Home)());
   renderDock();
-  if (state.tab === 'home') startOrb();
+  document.body.classList.toggle('busy-app', state.tab === 'analyzing');
   window.scrollTo(0, 0);
 }
 function Header() {
@@ -828,9 +859,7 @@ function Home() {
   fileIn.addEventListener('change', () => { state.file = fileIn.files[0] || null; fileTag.textContent = state.file ? state.file.name : ''; sync(); });
   requestAnimationFrame(() => { sync(); typewriter(typed.firstChild, () => !ta.value); });
 
-  const hero = el('div', { class: 'hero' }, el('canvas', { id: 'orb', 'aria-hidden': 'true' }));
   return el('section', { class: 'screen' },
-    hero,
     el('div', { class: 'lead' },
       el('h2', { text: L('heroTitle') }),
       el('p', { text: L('heroSub') })),
@@ -1018,7 +1047,7 @@ Object.assign(I18N.uz, {
   myLocation: 'Joylashuvim', locErr: 'Joylashuvni aniqlab boʻlmadi — tuman nomini yozing.', locOk: 'Joylashuv olindi',
   routesTitle: '{n} ta yoʻl topdim', routesSub: 'Qaysi biri bilan boramiz? Men har qadamda yoningizdaman.', recommended: 'tavsiya',
   stepsN: '{n} qadam', details: 'Batafsil va qonun', lawyer: 'Advokat', stepOf: '{i}/{n}-qadam',
-  whereL: 'Qayerga', bringL: 'Olib boring', deadlineL: 'Javob muddati: {n} kun', done: 'Bajardim', map: 'Qanday boraman', pdf: 'Ariza PDF', printL: 'Chop etish', soonRoute: 'Yoʻnalish va transport hali qoʻshilmagan — manzillar qoʻshilgach shu yerda chiqadi.', soonPrint: 'Chop etish joylari hali qoʻshilmagan — hamkorlar qoʻshilgach shu yerda chiqadi.', donate: 'Loyihani qoʻllab-quvvatlash', soonDonate: 'Donat hali mavjud emas. Rahmat!',
+  whereL: 'Qayerga', bringL: 'Olib boring', deadlineL: 'Javob muddati: {n} kun', done: 'Bajardim', map: 'Qanday boraman', pdf: 'Ariza PDF', printL: 'Chop etish', busyRoute: 'Siz uchun eng yaqin idorani va qulay yoʻlni qidiryapmiz…', busyPrint: 'Yaqin atrofdagi chop etish joylarini qidiryapmiz…', busyPdf: 'Arizangizni tayyorlab, chatga yuboryapman…', pdfDone: 'Ariza chatga yuborildi — Telegram chatini oching', soonRoute: 'Yoʻnalish va transport hali qoʻshilmagan — manzillar qoʻshilgach shu yerda chiqadi.', soonPrint: 'Chop etish joylari hali qoʻshilmagan — hamkorlar qoʻshilgach shu yerda chiqadi.', donate: 'Loyihani qoʻllab-quvvatlash', soonDonate: 'Donat hali mavjud emas. Rahmat!',
   ask: 'Savol', alt: 'Boshqa yoʻl', pdfSent: 'PDF Telegram chatga yuborildi', pdfErr: 'PDF tayyorlab boʻlmadi, birozdan soʻng qayta urinib koʻring',
   waitTitle: 'Javobni kutamiz', waitSub: '{n} kundan soʻng Telegram’da oʻzim soʻrayman. Javob oldinroq kelsa, shu yerda belgilang.',
   resOk: 'Hal boʻldi', resWait: 'Hali javob yoʻq', resNo: 'Rad etishdi', routeDoneTitle: 'Barcha qadamlar bajarildi', routeDoneSub: 'Vaziyat hal boʻldimi?',
@@ -1034,7 +1063,7 @@ Object.assign(I18N.ru, {
   myLocation: 'Моя геолокация', locErr: 'Не удалось определить геолокацию — напишите район.', locOk: 'Геолокация получена',
   routesTitle: 'Нашёл {n} пути', routesSub: 'Каким пойдём? Я буду рядом на каждом шаге.', recommended: 'рекомендую',
   stepsN: '{n} шага', details: 'Подробнее и закон', lawyer: 'Адвокат', stepOf: 'Шаг {i} из {n}',
-  whereL: 'Куда', bringL: 'Взять с собой', deadlineL: 'Срок ответа: {n} дн.', done: 'Сделал', map: 'Как добраться', pdf: 'Заявление PDF', printL: 'Печать', soonRoute: 'Маршруты и транспорт ещё не добавлены — появятся здесь, когда добавим адреса.', soonPrint: 'Места печати ещё не добавлены — появятся здесь, когда добавим партнёров.', donate: 'Поддержать проект', soonDonate: 'Пожертвования пока недоступны. Спасибо!',
+  whereL: 'Куда', bringL: 'Взять с собой', deadlineL: 'Срок ответа: {n} дн.', done: 'Сделал', map: 'Как добраться', pdf: 'Заявление PDF', printL: 'Печать', busyRoute: 'Ищем ближайшее учреждение и удобный маршрут…', busyPrint: 'Ищем места для печати поблизости…', busyPdf: 'Готовлю заявление и отправляю в чат…', pdfDone: 'Заявление отправлено — откройте чат Telegram', soonRoute: 'Маршруты и транспорт ещё не добавлены — появятся здесь, когда добавим адреса.', soonPrint: 'Места печати ещё не добавлены — появятся здесь, когда добавим партнёров.', donate: 'Поддержать проект', soonDonate: 'Пожертвования пока недоступны. Спасибо!',
   ask: 'Вопрос', alt: 'Другой путь', pdfSent: 'PDF отправлен в чат Telegram', pdfErr: 'Не удалось подготовить PDF, попробуйте чуть позже',
   waitTitle: 'Ждём ответа', waitSub: 'Через {n} дн. я сам спрошу в Telegram. Если ответ придёт раньше — отметьте здесь.',
   resOk: 'Решилось', resWait: 'Ответа пока нет', resNo: 'Отказали', routeDoneTitle: 'Все шаги выполнены', routeDoneSub: 'Ситуация решилась?',
@@ -1050,7 +1079,7 @@ Object.assign(I18N.en, {
   myLocation: 'My location', locErr: 'Couldn’t get your location — please type the district.', locOk: 'Location received',
   routesTitle: 'I found {n} paths', routesSub: 'Which one shall we take? I’ll be with you at every step.', recommended: 'recommended',
   stepsN: '{n} steps', details: 'Details and law', lawyer: 'Lawyer', stepOf: 'Step {i} of {n}',
-  whereL: 'Where', bringL: 'Bring', deadlineL: 'Response time: {n} days', done: 'Done', map: 'Get there', pdf: 'Application PDF', printL: 'Print', soonRoute: 'Routes and transport are not added yet — they will appear here once addresses are added.', soonPrint: 'Print locations are not added yet — they will appear here once partners are added.', donate: 'Support the project', soonDonate: 'Donations are not available yet. Thank you!',
+  whereL: 'Where', bringL: 'Bring', deadlineL: 'Response time: {n} days', done: 'Done', map: 'Get there', pdf: 'Application PDF', printL: 'Print', busyRoute: 'Finding the nearest office and the best route…', busyPrint: 'Looking for print shops nearby…', busyPdf: 'Preparing your application and sending it to the chat…', pdfDone: 'Application sent — open the Telegram chat', soonRoute: 'Routes and transport are not added yet — they will appear here once addresses are added.', soonPrint: 'Print locations are not added yet — they will appear here once partners are added.', donate: 'Support the project', soonDonate: 'Donations are not available yet. Thank you!',
   ask: 'Question', alt: 'Another path', pdfSent: 'The PDF was sent to your Telegram chat', pdfErr: 'Couldn’t prepare the PDF, please try again shortly',
   waitTitle: 'Waiting for the reply', waitSub: 'In {n} days I’ll check in with you on Telegram. If the reply comes earlier, mark it here.',
   resOk: 'Resolved', resWait: 'No reply yet', resNo: 'Refused', routeDoneTitle: 'All steps are done', routeDoneSub: 'Has the situation been resolved?',
@@ -1163,11 +1192,15 @@ async function chooseRoute(i) {
   catch (e) { toast(e.message || L('errAnalyze')); }
 }
 
+// Jamoat transporti marshruti (Yandex, rtt=mt) va yaqin nusxa markazlari — kalitsiz havolalar
+// Toʻgʻridan-toʻgʻri rtext=~matn notoʻgʻri joyni topadi (sinov) — avval atrofdagi idoralar roʻyxati, keyin "Marshrut"
+const routeUrl = (s, dest) => 'https://yandex.uz/maps/?text=' + encodeURIComponent(dest) + (s.lat != null && s.lon != null ? '&ll=' + s.lon + ',' + s.lat + '&z=14' : '');
+const printUrl = s => s.print_url || 'https://yandex.uz/maps/?text=' + encodeURIComponent('nusxa koʻchirish chop etish xizmati');
 function Step() {
   const s = nav.st, c = s && s.current; if (!c) return Routes();
   const pct = Math.round((c.i - 1) / c.n * 100);
   const info = [];
-  if (c.idora) info.push(el('div', { class: 'info' }, ic('building'), el('span', {}, el('small', { text: L('whereL') }), (c.idora + (s.district ? ', ' + s.district : '')))));
+  if (c.idora) info.push(el('div', { class: 'info' }, ic('building'), el('span', {}, el('small', { text: L('whereL') }), (c.office ? c.idora + ' — ' + c.office.nom + (c.office.manzil ? ', ' + c.office.manzil : '') : c.idora + (s.district ? ', ' + s.district : '')))));
   if (c.olib && c.olib.length) info.push(el('div', { class: 'info' }, ic('folder'), el('span', {}, el('small', { text: L('bringL') }), c.olib.join(', '))));
   if (c.kun) info.push(el('div', { class: 'info' }, ic('clock'), el('span', {}, L('deadlineL', { n: c.kun }),
     c.manba && c.manba.link ? el('a', { class: 'src', href: c.manba.link, target: '_blank', rel: 'noopener',
@@ -1178,9 +1211,9 @@ function Step() {
     el('div', { class: 'step-card glass' }, el('h2', { text: c.nima }), info.length ? el('div', { class: 'infos' }, info) : null),
     el('button', { class: 'btn primary press big', onclick: () => stepAction('done') }, ic('check'), L('done')),
     el('div', { class: 'icon-row' },
-      c.idora ? el('button', { class: 'icb press', onclick: () => toast(L('soonRoute')) }, ic('pin'), el('span', { text: L('map') })) : null,
+      c.idora ? el('button', { class: 'icb press', onclick: () => openWithBusy(L('busyRoute'), c.map_url || routeUrl(s, c.idora)) }, ic('pin'), el('span', { text: L('map') })) : null,
       c.ariza ? el('button', { class: 'icb press', onclick: sendPdf }, ic('doc'), el('span', { text: L('pdf') })) : null,
-      c.ariza ? el('button', { class: 'icb press', onclick: () => toast(L('soonPrint')) }, ic('building'), el('span', { text: L('printL') })) : null,
+      c.ariza ? el('button', { class: 'icb press', onclick: () => openWithBusy(L('busyPrint'), printUrl(s)) }, ic('building'), el('span', { text: L('printL') })) : null,
       el('button', { class: 'icb press', onclick: askSheet }, ic('msg'), el('span', { text: L('ask') }))),
     el('button', { class: 'link', onclick: () => go('routes') }, L('alt')));
 }
@@ -1238,7 +1271,8 @@ function Details() {
 
 async function sendPdf() {
   haptic();
-  try { await api('/nav/pdf', { case_id: nav.caseId, lang: LANG }); toast(L('pdfSent')); } catch (e) { toast(L('pdfErr')); }
+  const done = busyOverlay(L('busyPdf'));
+  try { await api('/nav/pdf', { case_id: nav.caseId, lang: LANG }); done(L('pdfDone')); } catch (e) { done(); toast(L('pdfErr')); }
 }
 function askSheet() {
   Sheet(close => {
@@ -1374,129 +1408,6 @@ function renderDock() {
     tab('cases', 'cases', L('tabCases')));
 }
 
-// ===================== 3D suyuq shar (GPU shader) =====================
-// Vertex shader sirtni tovlanadi: r = 1 + A·f(n, t). Normal chekli ayirmalar bilan (ε = 0.01) qayta hisoblanadi.
-// Fragment: Schlick Fresnel F = F0 + (1 − F0)(1 − n·v)^5, F0 = 0.04; iridessensiya — kosinus palitra; Blinn-Phong yaltirash.
-const VERT = `
-uniform float uTime; uniform float uAmp; varying vec3 vN; varying vec3 vV; varying float vF;
-float f(vec3 p){ return 0.55*sin(p.x*3.1+uTime*1.6) + 0.45*sin(p.y*3.7+uTime*1.25) + 0.35*sin(p.z*4.3+uTime*1.9) + 0.30*sin((p.x+p.y+p.z)*2.3-uTime*1.1); }
-vec3 disp(vec3 n){ return n*(1.0+uAmp*f(n)); }
-void main(){
-  vec3 n = normalize(position);
-  vec3 t = normalize(cross(n, abs(n.y) < 0.99 ? vec3(0.0,1.0,0.0) : vec3(1.0,0.0,0.0)));
-  vec3 b = cross(n, t);
-  vec3 p0 = disp(n), p1 = disp(normalize(n + t*0.01)), p2 = disp(normalize(n + b*0.01));
-  vec3 nn = normalize(cross(p1 - p0, p2 - p0)); if (dot(nn, n) < 0.0) nn = -nn;
-  vF = f(n);
-  vec4 mv = modelViewMatrix * vec4(p0 * 1.32, 1.0);
-  vN = normalize(normalMatrix * nn); vV = normalize(-mv.xyz);
-  gl_Position = projectionMatrix * mv;
-}`;
-const FRAG = `
-uniform vec3 cA; uniform vec3 cB; uniform vec3 cC; uniform float uLight; varying vec3 vN; varying vec3 vV; varying float vF;
-void main(){
-  float ndv = clamp(dot(vN, vV), 0.0, 1.0);
-  float F = 0.04 + 0.96 * pow(1.0 - ndv, 5.0);
-  float h = 1.0 - ndv + vF * 0.08;
-  vec3 iri = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + h * 0.85 + 0.55));
-  vec3 base = mix(cA, cB, smoothstep(0.0, 1.0, h));
-  vec3 L = normalize(vec3(-0.45, 0.75, 0.55)); vec3 H = normalize(L + vV);
-  float spec = pow(max(dot(vN, H), 0.0), 72.0);
-  float diff = 0.62 + 0.38 * max(dot(vN, L), 0.0);
-  vec3 col = base * diff * mix(0.55, 0.78, uLight) + iri * F * mix(0.85, 0.55, uLight) + cC * pow(1.0 - ndv, 3.0) * 0.35 + vec3(spec) * 0.85;
-  gl_FragColor = vec4(col, 1.0);
-}`;
-let orb = null;
-function startOrb() {
-  const canvas = $('#orb'); if (!canvas || orb) return;
-  const fallback = () => canvas.replaceWith(el('div', { class: 'orb-fallback', 'aria-hidden': 'true' }));
-  if (!window.THREE) return fallback();
-  let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' }); } catch (e) { return fallback(); }
-  const SIZE = 264; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); renderer.setSize(SIZE, SIZE, false);
-  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50); camera.position.z = 6.3;
-  const uniforms = { uTime: { value: 0 }, uAmp: { value: 0.07 }, uLight: { value: 0 },
-    cA: { value: new THREE.Color() }, cB: { value: new THREE.Color() }, cC: { value: new THREE.Color() } };
-  const geo = new THREE.IcosahedronGeometry(1, 20);
-  const blob = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG }));
-  scene.add(blob);
-  // Ikki halqa (orbita). Radiuslar shar radiusi rb ga proporsional: R₁ = 1.30·rb, R₂ = R₁·φ^¼ (φ — oltin nisbat).
-  // Qalinlik va ko'rsatkich o'lchami ham R ga proporsional. Qiyaliklar har ochilishda tasodifiy (lekin chetga to'liq
-  // yonbosh bo'lmasligi uchun 55°–75° oralig'ida). Ko'rsatkich tezligi Kepler qonuni bo'yicha: ω ∝ R^(−3/2).
-  // Ko'rsatkich (R,0,0) nuqtada, pivot +z atrofida aylanadi → tezlik vektori +y, konus ham +y ga (urinma bo'ylab).
-  const PHI = (1 + Math.sqrt(5)) / 2, RB = 1.32, AMAX = 0.2;
-  const R = [RB * 1.30, RB * 1.30 * Math.pow(PHI, 0.25)];
-  const rnd = (a, b) => a + Math.random() * (b - a);
-  const mats = [new THREE.MeshStandardMaterial({ color: 0xf5b83d, metalness: 1, roughness: 0.28, emissive: 0x2a1800 }),
-                new THREE.MeshStandardMaterial({ color: 0xffd98a, metalness: 1, roughness: 0.22, emissive: 0x241a06 })];
-  const W1 = 0.6;
-  const orbits = R.map((r, i) => {
-    const g = new THREE.Group();
-    g.rotation.set(rnd(0.96, 1.31), rnd(-0.45, 0.45), rnd(0, Math.PI * 2)); scene.add(g);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.011 * r, 12, 220), mats[i]); g.add(ring);
-    const pivot = new THREE.Group(); pivot.rotation.z = rnd(0, Math.PI * 2); g.add(pivot);
-    const needle = new THREE.Mesh(new THREE.ConeGeometry(0.042 * r, 0.19 * r, 20), mats[i]); needle.position.set(r, 0, 0); pivot.add(needle);
-    return { g, ring, pivot, r, w: W1 * Math.pow(R[0] / r, 1.5) * (i % 2 ? -1 : 1) };
-  });
-  // Halqalarning o'zi ham aylanadi (giroskop kabi): har biri tasodifiy birlik o'q a atrofida, Ω ∈ [0.22, 0.42] rad/s.
-  // Ikkinchi halqa o'qi birinchisiga teskari (−a) va ±25° gacha tasodifiy og'gan; burchak tezliklari ham Kepler nisbatida.
-  const randAxis = () => { const u = rnd(-1, 1), th = rnd(0, Math.PI * 2), s = Math.sqrt(1 - u * u); return new THREE.Vector3(s * Math.cos(th), s * Math.sin(th), u); };
-  const a1 = randAxis();
-  const tiltAway = new THREE.Quaternion().setFromAxisAngle(randAxis().cross(a1).normalize(), rnd(-0.44, 0.44));
-  const axes = [a1, a1.clone().negate().applyQuaternion(tiltAway).normalize()];
-  const spin0 = rnd(0.22, 0.42);
-  orbits.forEach((o, i) => { o.axis = axes[i]; o.spin = spin0 * Math.pow(R[0] / o.r, 1.5); });
-  const dq = new THREE.Quaternion();
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55)); const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-2, 3, 4); scene.add(sun);
-
-  // Kamerani sig'dirish. Halqalar istalgan holatga aylanadi, shuning uchun hamma narsa radiusi ρ = max(1.06·R₂, rb·(1+Amax))
-  // bo'lgan sfera ichida. Sferaning proyeksiyasi: sin α = ρ/d (α — ko'rinish konusining yarim burchagi).
-  // Shart tan α = ρ/√(d² − ρ²) ≤ T, T = tan(fov/2)/1.08 (8% zaxira) → d = ρ·√(1 + 1/T²). Bu holatga bog'liq emas.
-  const rho = Math.max(R[1] * 1.06, RB * (1 + AMAX));
-  const T = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / 1.08;
-  camera.position.z = rho * Math.sqrt(1 + 1 / (T * T));
-
-  // Fizika: aylanish burchak tezligi ω (rad/s) bazaviy tezlikka eksponensial qaytadi; tortish ω ga impuls beradi.
-  // Tebranish amplitudasi A — so'nuvchi prujina: A'' = −k(A − A₀) − cA', k = 60, ζ = 0.32.
-  const P = { rot: 0, w: 0.28, w0: 0.28, A: 0.07, vA: 0, A0: 0.07, k: 60, zeta: 0.32 };
-  const cA_ = 2 * P.zeta * Math.sqrt(P.k);
-  let dragX = null, lastX = 0, lastT = 0;
-  canvas.addEventListener('pointerdown', e => { dragX = e.clientX; lastX = e.clientX; lastT = e.timeStamp; canvas.setPointerCapture(e.pointerId); P.vA += 0.9; haptic(); });
-  canvas.addEventListener('pointermove', e => { if (dragX === null) return; const dt = Math.max(1, e.timeStamp - lastT) / 1000;
-    P.w = (e.clientX - lastX) / dt * 0.012; lastX = e.clientX; lastT = e.timeStamp; });
-  const end = () => { dragX = null; }; canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
-
-  const DT = 1 / 120; let acc = 0, last = performance.now(), t = 0, raf = 0, running = true;
-  const frame = now => {
-    raf = requestAnimationFrame(frame);
-    const dtFrame = Math.min(0.1, (now - last) / 1000); acc += dtFrame; last = now;
-    while (acc >= DT) {
-      if (dragX === null) P.w += (P.w0 - P.w) * (1 - Math.exp(-1.6 * DT)); // ω → ω₀, τ ≈ 0.6 s
-      P.rot += P.w * DT;
-      const a = -P.k * (P.A - P.A0) - cA_ * P.vA; P.vA += a * DT; P.A += P.vA * DT;
-      t += DT; acc -= DT;
-    }
-    uniforms.uTime.value = t; uniforms.uAmp.value = Math.max(0.02, Math.min(0.2, P.A));
-    blob.rotation.y = P.rot; blob.rotation.x = Math.sin(t * 0.4) * 0.18;
-    for (const o of orbits) {
-      o.pivot.rotation.z += o.w * dtFrame;                              // ko'rsatkich halqa bo'ylab
-      o.g.quaternion.premultiply(dq.setFromAxisAngle(o.axis, o.spin * dtFrame)); // halqaning o'zi (dunyo o'qi atrofida)
-    }
-    renderer.render(scene, camera);
-  };
-  const setRunning = on => { if (on === running) return; running = on; if (on) { last = performance.now(); raf = requestAnimationFrame(frame); } else cancelAnimationFrame(raf); };
-  const io = new IntersectionObserver(([en]) => setRunning(en.isIntersecting && !document.hidden)); io.observe(canvas);
-  const vis = () => setRunning(!document.hidden); document.addEventListener('visibilitychange', vis);
-  const setTheme = dark => {
-    uniforms.cA.value.set(dark ? '#1b1236' : '#8f72ff'); uniforms.cB.value.set(dark ? '#0d3a52' : '#3cc4e4');
-    uniforms.cC.value.set(dark ? '#f5b83d' : '#d38f12'); uniforms.uLight.value = dark ? 0 : 1;
-  };
-  setTheme(isDark());
-  if (REDUCED) { renderer.render(scene, camera); running = false; } else raf = requestAnimationFrame(frame);
-  orb = { setTheme, stop() { cancelAnimationFrame(raf); io.disconnect(); document.removeEventListener('visibilitychange', vis);
-    orbits.forEach(o => { o.ring.geometry.dispose(); o.pivot.children[0].geometry.dispose(); }); mats.forEach(m => m.dispose()); renderer.dispose(); geo.dispose(); } };
-}
-function stopOrb() { if (orb) { orb.stop(); orb = null; } }
 
 applyTheme();
 render();

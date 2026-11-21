@@ -247,8 +247,19 @@ async def inactivity_watcher(bot: Bot) -> None:
     while True:
         try:
             now = time.time()
-            for case in (store.stale_cases(('jiddiy', 'xavf'), 'answered', now - wait)
-                         + store.stale_cases(('jiddiy', 'xavf'), 'k2_more', now - wait)):
+            # 2-kalit aniqlashtirishini kutayotgan murojaatga "hal boʻldimi?" soʻralmaydi (holat buzilib, foydalanuvchi
+            # javobi "murojaat topilmadi" boʻlib qolardi). Uzoq javobsiz qolsa — toʻgʻridan-toʻgʻri klinikaga shoshilinch.
+            for case in store.stale_cases(('jiddiy', 'xavf'), 'k2_more', now - 3 * wait):
+                store.set_status(case['id'], 'urgent')
+                store.set_pending(case['user_id'], None)
+                lang = store.lang(case['user_id'])
+                await bot.send_message(case['user_id'], t(lang, 'K2_TO_CLINIC', id=case['id']))
+                if config.CLINIC_CHAT_ID is not None:
+                    full = store.get_case_any(case['id'])
+                    await bot.send_message(config.CLINIC_CHAT_ID, clinic_card(full, full['score'] or '—', 'aniqlashtirish kelmadi', urgent=True),
+                                           disable_web_page_preview=True)
+                log.warning('Case %s: 2-kalit aniqlashtirishi kelmadi, klinikaga shoshilinch', case['id'])
+            for case in store.stale_cases(('jiddiy', 'xavf'), 'answered', now - wait):
                 lang = store.lang(case['user_id'])
                 store.set_status(case['id'], 'reminded')
                 await bot.send_message(case['user_id'], t(lang, 'REMINDER', id=case['id']),

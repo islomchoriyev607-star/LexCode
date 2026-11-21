@@ -11,7 +11,7 @@ Vaqt: har slaydga ~40–60 soniya, jami 5–6 daqiqa.
 "Assalomu alaykum. Biz — LexCode jamoasi, loyihamiz — Huquqiy Navigator. Huquqi buzilgan odam qayerga, qachon va qanday murojaat qilishni bilmaydi. Biz unga choʻntagidagi yoʻlboshchini beramiz — Telegram bot va Mini App."
 
 **2. Biz kimmiz (Islom)**
-"Jamoada yuristlar va dasturchi-dizayner bor. Foydalanuvchi vaziyatini yozadi, gapiradi yoki skrinshot yuboradi. AI uni lex.uz dagi amaldagi qonun bilan solishtiradi va yoʻl koʻrsatadi: eng yaqin idoraning aniq manzili, u yerga qaysi avtobus yoki metro bilan borish, muddat va tayyor ariza PDF koʻrinishida. Har bir modda lex.uz havolasi bilan; bot hukm chiqarmaydi."
+"Jamoada yuristlar va 2 ta dasturchi bor. Foydalanuvchi vaziyatini yozadi, gapiradi yoki skrinshot yuboradi. AI uni lex.uz dagi amaldagi qonun bilan solishtiradi va yoʻl koʻrsatadi: eng yaqin idoraning aniq manzili, u yerga qaysi avtobus yoki metro bilan borish, muddat va tayyor ariza PDF koʻrinishida. Har bir modda lex.uz havolasi bilan; bot hukm chiqarmaydi."
 
 **3. Muammo (Shaʼbona)**
 "2026-yilning 8 oyida Prezident Xalq qabulxonalariga 557 ming murojaat kelgan. Ularning 14–16 foizi takroriy, 20 foizga yaqini oddiy huquqiy tushuntirish bilan yopiladi. Imtiyozli transport kartasi arizalarining 64,7 foizi rad etilgan. Sabab — odamlar qayerga va qanday yozishni bilmaydi."
@@ -29,7 +29,7 @@ Vaqt: har slaydga ~40–60 soniya, jami 5–6 daqiqa.
 "Hozir MVP ishlaydi: bot va Mini App, 7 ta qonun, 2 942 modda, 4 til, Toshkentdagi 156 ta idora manzili. 6 oyda — 10 ming foydalanuvchi va 2 ta universitet bilan pilot. 1 yilda — 150 ming foydalanuvchi, 3 yilda — 450 ming va davlat portallari bilan integratsiya."
 
 **8. Jamoa (Islom)**
-"Islom — loyiha rahbari, yurisprudensiya 2-kurs, Yuridik klinikada 1 yil tajriba. Mirsoat — CTO va dizayner, 2 yil dizayn tajribasi. Shaʼbona — biznes analitik va yurist. 3 oydan beri birgamiz. Endi jonli demoni koʻrsatamiz."
+"Jamoada 2 ta dasturchi bor. Islom — loyiha rahbari, yurisprudensiya 2-kurs, Yuridik klinikada 1 yil tajriba va 6 oy AI dasturlash. Mirsoat — CTO va dizayner: 2 yil dizayn va 1 yil vibe coding tajribasi. Shaʼbona — biznes analitik va yurist. 3 oydan beri birgamiz. Endi jonli demoni koʻrsatamiz."
 
 ---
 

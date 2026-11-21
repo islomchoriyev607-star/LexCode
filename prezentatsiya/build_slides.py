@@ -319,12 +319,12 @@ tip(s, 'Keyingi qadamlar: 50+ qonun, viloyatlar idoralari, chop etish hamkorlari
 
 # =========================== 8. Jamoa ===========================
 s = prs.slides.add_slide(BLANK)
-header(s, 8, 'Jamoa', 'Huquq + texnologiya + biznes · 3 oydan beri birgamiz')
+header(s, 8, 'Jamoa', 'Huquq + texnologiya + biznes · 2 dasturchi · 3 oydan beri birgamiz')
 team = [
     ('IC', BLUE, 'Islom Choriyev', 'Toʻlqin oʻgʻli', 'CEO / Loyiha rahbari',
      'OʻzMU, yurisprudensiya 2-kurs · Yuridik klinika', ['1 yil — huquqiy maslahat', '6 oy — AI dasturlash']),
     ('MX', VIOLET, 'Mirsoat Xolmurodov', 'Gʻulom oʻgʻli', 'CTO va Dizayner',
-     'Mahsulot dizayni va texnik yechim', ['2 yil — dizayn']),
+     'Mahsulot dizayni va texnik yechim', ['2 yil — dizayn', '1 yil — vibe coding']),
     ('ShT', GREEN, 'Shaʼbona Toʻychiyeva', 'Shukurjon qizi', 'Biznes analitik',
      'Yurist · bozor tahlili, biznes-model', ['1 yil — biznes']),
 ]

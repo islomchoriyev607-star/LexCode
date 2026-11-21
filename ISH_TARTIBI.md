@@ -6,13 +6,21 @@ Bitta GitHub akkaunt, ikki noutbuk, har birida alohida Claude Code. Claude'lar b
 
 | | 1-noutbuk | 2-noutbuk |
 |---|---|---|
-| **Vazifa** | Hujjatlar | Kod |
+| **Vazifa** | Hujjatlar | Kod + **bot serveri** |
+| **Bot ishlaydimi?** | ❌ **Yoʻq — hech qachon ishga tushirilmaydi** | ✅ Ha, yagona server (`tools\run_demo.py`) |
 | **Tarmoq (branch)** | `hujjat-qism` | `kod-qism` |
 | **Faqat shu fayllarni oʻzgartiradi** | `README.md`, `HANDOFF.md`, `BUILD_PLAN.md`, `docs/`, `prezentatsiya/`, `jurnal/1-noutbuk.md` | `bot/`, `webapp/`, `tools/`, `data/`, `eval/`, `requirements.txt`, `.env.example`, `jurnal/2-noutbuk.md` |
 
 **Umumiy fayllar** (`CLAUDE.md`, `ISH_TARTIBI.md`, `.gitignore`) faqat kelishib oʻzgartiriladi. Kim oʻzgartirsa, oʻz jurnaliga yozadi.
 
 Claude uchun qoida: **oʻz noutbukiga tegishli boʻlmagan faylni oʻzgartirma.** Kerak boʻlsa, oʻz jurnalingga "2-noutbukdan soʻrov: …" deb yoz va toʻxta.
+
+### Bot faqat bitta joyda ishlaydi
+Bot faqat **2-noutbukda** ishga tushiriladi.
+- Bitta token bilan ikki kompyuterda bot yoqilsa, Telegram `TelegramConflictError` beradi va xabarlar yoʻqoladi.
+- 1-noutbukdagi Claude `run_demo.py` va `bot.main` ni ishga tushirmaydi.
+- `.env` faqat 2-noutbukda toʻliq boʻladi.
+- Tunnel manzili har ishga tushganda oʻzgaradi; menyu tugmalari avtomatik yangilanadi.
 
 ## 2. Ishni boshlashdan oldin (har safar)
 ```bash

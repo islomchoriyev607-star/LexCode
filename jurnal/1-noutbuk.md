@@ -2,6 +2,14 @@
 
 Yangi yozuv eng yuqoriga yoziladi. Tartib: `ISH_TARTIBI.md`.
 
+## 2026-11-21 — Bot serveri 2-noutbukka koʻchdi
+- **Nima qilindi:** qaror — bot **faqat 2-noutbukda** ishlaydi; 1-noutbukda faqat hujjatlar va prezentatsiya. 1-noutbukda bot va tunnel toʻxtatilgan (tekshirildi). `ISH_TARTIBI.md` ga qoida qoʻshildi.
+- **2-noutbuk uchun:**
+  - Botni `.venv\Scripts\python tools\run_demo.py` bilan ishga tushiring; `cloudflared` oʻrnatilgan boʻlishi kerak.
+  - Checkpoint 14:00 da bot ishlab turishi kerak.
+  - Tunnel manzilini oʻz jurnalingizga yozing.
+- **Keyingi ish (1-noutbuk):** PDF prezentatsiya (namuna pptx asosida).
+
 ## 2026-11-21 — Loyiha GitHub'ga yuklandi
 - **Nima qilindi:** loyiha public repozitoriyga yuklandi: https://github.com/islomchoriyev607-star/LexCode ; `hujjat-qism` va `kod-qism` tarmoqlari ochildi. Yangi fayllar: `README.md`, `ISH_TARTIBI.md`, `jurnal/`. Yangilandi: `CLAUDE.md`, `.gitignore`.
 - **Shu paytgacha qilingan ish (20-noyabr, shu noutbukda):**

@@ -1,0 +1,28 @@
+# Maxfiy — hech qachon yuklanmaydi (repo PUBLIC)
+.env
+.env.*
+!.env.example
+
+# Foydalanuvchi maʼlumotlari va loglar
+data/*.db
+data/*.db.tmp
+data/media/
+logs/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node (agar qoʻshilsa)
+node_modules/
+
+# Claude Code shaxsiy sozlamalari
+.claude/settings.local.json
+
+# Tanlov tashkilotchilari materiallari (lokal)
+materiallar/
+
+# OS
+.DS_Store
+Thumbs.db

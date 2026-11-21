@@ -1,0 +1,10 @@
+# lex.uz hujjatlari (lotin, manfiy ID). Format: ID | qisqa nom | to'liq nom
+# Yuristlar ro'yxatni to'ldiradi; keyin: python tools/lex2md.py data/md <ID> && python tools/build_index.py
+-6257288 | MK | Mehnat kodeksi
+-111189 | FK-1 | Fuqarolik kodeksi (birinchi qism)
+-180552 | FK-2 | Fuqarolik kodeksi (ikkinchi qism)
+-111453 | JK | Jinoyat kodeksi
+-97664 | MJtK | Ma'muriy javobgarlik to'g'risidagi kodeks
+-4704 | IHHQ | Iste'molchilarning huquqlarini himoya qilish to'g'risidagi qonun
+-3336169 | MurQ | Jismoniy va yuridik shaxslarning murojaatlari to'g'risidagi qonun
+# TODO (yuristlar): "Taʼlim toʻgʻrisida"gi Qonun (2020, OʻRQ-637) — lex.uz ID sini topib, shu yerga "ID | TQ | Taʼlim toʻgʻrisidagi qonun" qatorini qo'shing

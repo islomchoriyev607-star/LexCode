@@ -1,0 +1,1504 @@
+<meta charset="utf-8">
+<title>Huquqiy Navigator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* Maket: telefon ustuni (≤520px), pastda suzuvchi shisha dock. Ikki mavzu: yorug' (bare :root) va qorong'i.
+   Unumdorlik: backdrop-filter faqat dock va sheet'da; animatsiyalar faqat transform/opacity (kompozitor). */
+:root {
+  --bg: #eceef7; --bg-2: #ffffff;
+  --ink: #15132c; --ink-2: #4a4770; --ink-3: #8783a6;
+  --surface: rgba(255, 255, 255, .66); --surface-2: rgba(255, 255, 255, .86); --edge: rgba(21, 19, 44, .09);
+  --hi: rgba(255, 255, 255, .95); --shadow: rgba(52, 38, 120, .16); --scrim: rgba(20, 16, 40, .32);
+  --violet: #6b4bff; --cyan: #0a9fc2; --gold: #d38f12; --good: #0e9a6a; --warn: #b77d00; --bad: #e0244c;
+  --ask-bg: #ffffff; --aur-1: rgba(107, 75, 255, .20); --aur-2: rgba(10, 159, 194, .14); --aur-3: rgba(211, 143, 18, .10);
+  --font-display: 'Unbounded', 'Manrope', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --r: 22px; --dock-h: 74px;
+  --spring: cubic-bezier(.22, 1, .36, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #07070d; --bg-2: #0f0e1a; --ink: #f3f1ff; --ink-2: #aca8c8; --ink-3: #6f6b8e;
+  --surface: rgba(255, 255, 255, .055); --surface-2: rgba(255, 255, 255, .09); --edge: rgba(255, 255, 255, .11);
+  --hi: rgba(255, 255, 255, .16); --shadow: rgba(0, 0, 0, .55); --scrim: rgba(3, 2, 10, .6);
+  --violet: #8b5cf6; --cyan: #22d3ee; --gold: #f5b83d; --good: #34d399; --warn: #fbbf24; --bad: #fb7185;
+  --ask-bg: #0b0a14; --aur-1: rgba(139, 92, 246, .26); --aur-2: rgba(34, 211, 238, .14); --aur-3: rgba(245, 184, 61, .09);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #07070d; --bg-2: #0f0e1a; --ink: #f3f1ff; --ink-2: #aca8c8; --ink-3: #6f6b8e;
+  --surface: rgba(255, 255, 255, .055); --surface-2: rgba(255, 255, 255, .09); --edge: rgba(255, 255, 255, .11);
+  --hi: rgba(255, 255, 255, .16); --shadow: rgba(0, 0, 0, .55); --scrim: rgba(3, 2, 10, .6);
+  --violet: #8b5cf6; --cyan: #22d3ee; --gold: #f5b83d; --good: #34d399; --warn: #fbbf24; --bad: #fb7185;
+  --ask-bg: #0b0a14; --aur-1: rgba(139, 92, 246, .26); --aur-2: rgba(34, 211, 238, .14); --aur-3: rgba(245, 184, 61, .09);
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 500 15px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent; transition: background-color .35s var(--spring); }
+/* Fon "aurora": oldindan yumshoq gradientlar, filter: blur ishlatilmaydi (qotmaslik uchun) */
+.aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(60% 38% at 18% 8%, var(--aur-1), transparent 70%),
+              radial-gradient(50% 34% at 88% 4%, var(--aur-2), transparent 70%),
+              radial-gradient(45% 30% at 60% 34%, var(--aur-3), transparent 75%); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.app { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; min-height: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px calc(var(--dock-h) + 40px + env(safe-area-inset-bottom, 0px)); }
+.screen { display: grid; gap: 14px; animation: enter .5s var(--spring) both; }
+@keyframes enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } }
+
+/* Suyuq shisha karta: yaltiroq qatlam fon qatlami sifatida (matn ustiga tushmaydi) */
+.glass { position: relative; border-radius: var(--r); border: 1px solid var(--edge);
+  background: linear-gradient(180deg, var(--hi), transparent 38%) top / 100% 100% no-repeat, var(--surface);
+  box-shadow: inset 0 1px 0 var(--hi), 0 14px 34px -20px var(--shadow); }
+.press { transition: transform .25s var(--spring), background-color .2s; }
+.press:active { transform: scale(.97); }
+
+/* Sarlavha */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex: none;
+  background: linear-gradient(135deg, var(--violet), var(--cyan)); box-shadow: 0 6px 16px -6px var(--violet); }
+.logo svg.i { width: 20px; height: 20px; stroke-width: 2; }
+.brand h1 { margin: 0; font: 700 15px/1.2 var(--font-display); letter-spacing: .01em; }
+.brand small { display: block; color: var(--ink-3); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.demo { color: var(--gold); background: color-mix(in srgb, var(--gold) 13%, transparent); }
+.pill.live { color: var(--good); background: color-mix(in srgb, var(--good) 13%, transparent); }
+
+/* 3D shar */
+.hero { display: grid; place-items: center; height: 264px; touch-action: pan-y; }
+#orb { width: 264px; height: 264px; max-width: 100%; display: block; cursor: grab; }
+.orb-fallback { width: 168px; height: 168px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.75), transparent 28%), conic-gradient(var(--violet), var(--cyan), var(--gold), var(--violet)); }
+.lead { text-align: center; display: grid; gap: 6px; }
+.lead h2 { margin: 0; font: 700 clamp(19px, 5.6vw, 25px)/1.22 var(--font-display); text-wrap: balance; }
+.lead p { margin: 0 auto; max-width: 40ch; color: var(--ink-2); font-size: 14px; text-wrap: balance; }
+
+/* Neon qidiruv maydoni: aylanadigan qatlam transform bilan (GPU), qayta chizilmaydi */
+.ask-wrap { position: relative; }
+.ask-glow { position: absolute; inset: 6px; border-radius: 26px; overflow: hidden; filter: blur(16px); opacity: .55; pointer-events: none; }
+.ask { position: relative; border-radius: 24px; padding: 1.6px; overflow: hidden; isolation: isolate; }
+.ring { position: absolute; left: 50%; top: 50%; width: 220%; aspect-ratio: 1; translate: -50% -50%; z-index: -1;
+  background: conic-gradient(var(--gold), var(--violet) 25%, var(--cyan) 50%, var(--violet) 75%, var(--gold));
+  animation: rot 5s linear infinite; will-change: transform; }
+.ask-glow .ring { width: 230%; animation: none; } /* xira qatlam qimirlamaydi: har kadrda blur qayta hisoblanmasin */
+.busy .ring { animation-duration: 1.4s; }
+@keyframes rot { to { transform: rotate(1turn); } }
+.ask-inner { position: relative; background: var(--ask-bg); border-radius: 22.5px; padding: 14px 14px 10px; display: grid; gap: 10px; }
+.field { position: relative; }
+.field textarea { width: 100%; min-height: 78px; max-height: 220px; resize: none; display: block; background: transparent; border: 0; outline: 0;
+  color: var(--ink); font: 500 15.5px/1.5 var(--font-body); padding: 0; }
+.typed { position: absolute; inset: 0 0 auto; pointer-events: none; color: var(--ink-3); font: 500 15.5px/1.5 var(--font-body); }
+.caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: var(--cyan); animation: blink 1.06s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.ask-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: var(--surface-2); border: 1px solid var(--edge); color: var(--ink-2); white-space: nowrap; }
+.chip svg.i { width: 16px; height: 16px; }
+.file-tag { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--cyan); }
+.send { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none;
+  background: linear-gradient(135deg, var(--violet), var(--cyan)); box-shadow: 0 8px 20px -8px var(--violet); transition: transform .25s var(--spring), opacity .2s; }
+.send:disabled { opacity: .35; box-shadow: none; cursor: default; }
+.send:not(:disabled):active { transform: scale(.92); }
+
+.label { color: var(--ink-3); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
+.quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 6px; margin: 0 -2px; scroll-snap-type: x proximity; }
+.quick::-webkit-scrollbar { display: none; }
+.quick .chip { scroll-snap-align: start; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stat { padding: 14px 10px; text-align: center; }
+.stat b { display: block; font: 700 18px/1.2 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat span { color: var(--ink-3); font-size: 11.5px; }
+
+/* Tahlil bosqichlari */
+.steps { padding: 18px; display: grid; gap: 14px; }
+.step { display: flex; align-items: center; gap: 12px; color: var(--ink-3); transition: color .3s; }
+.dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; border: 1.5px solid var(--edge);
+  font: 700 12px var(--font-mono); transition: background-color .3s, border-color .3s; }
+.dot svg.i { width: 15px; height: 15px; stroke-width: 2.4; }
+.step.on { color: var(--ink); }
+.step.on .dot { border-color: var(--cyan); animation: halo 1.2s ease-in-out infinite; }
+.step.done { color: var(--ink-2); }
+.step.done .dot { background: color-mix(in srgb, var(--good) 16%, transparent); border-color: var(--good); color: var(--good); animation: none; }
+@keyframes halo { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cyan) 35%, transparent); } 50% { box-shadow: 0 0 0 7px transparent; } }
+.bar { height: 4px; border-radius: 4px; background: var(--edge); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--violet), var(--cyan)); transition: transform .6s var(--spring); }
+
+/* Natija */
+.head { padding: 16px 18px; display: grid; gap: 10px; }
+.badge { justify-self: start; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; padding: 5px 11px; border-radius: 999px; }
+.badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.lv-oddiy { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.lv-muhim { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, transparent); }
+.lv-jiddiy, .lv-xavf { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.head p { margin: 0; font-size: 15.5px; }
+.sos { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 16px; font-weight: 700; color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 11%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent); }
+.sec { padding: 16px 18px; display: grid; gap: 10px; }
+.sec h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.sec h3 svg.i { width: 17px; height: 17px; color: var(--violet); }
+.sec ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+.sec li::marker { color: var(--violet); }
+.route { display: grid; gap: 3px; padding: 11px 13px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--edge); }
+.route b { font-size: 14.5px; }
+.route span { color: var(--ink-2); font-size: 13px; }
+.law { display: grid; gap: 3px; padding: 11px 13px; border-radius: 14px; text-decoration: none; color: var(--ink);
+  background: color-mix(in srgb, var(--violet) 8%, transparent); border: 1px solid color-mix(in srgb, var(--violet) 26%, transparent); }
+.law b { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 500 12.5px var(--font-mono); color: var(--violet); }
+.law b svg.i { width: 15px; height: 15px; }
+.law span { color: var(--ink-2); font-size: 13px; }
+.note { margin: 0; color: var(--ink-3); font-size: 12px; line-height: 1.5; }
+.actions { display: grid; gap: 10px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 14px; border-radius: 16px; font-weight: 800; font-size: 15px; }
+.btn.primary { color: #fff; background: linear-gradient(135deg, var(--violet), var(--cyan)); box-shadow: 0 10px 24px -12px var(--violet); }
+.btn.danger { color: var(--bad); background: color-mix(in srgb, var(--bad) 11%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 38%, transparent); }
+.btn.ghost { background: var(--surface); border: 1px solid var(--edge); }
+.btn:disabled { opacity: .45; }
+pre.doc { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.6 var(--font-mono); color: var(--ink); padding: 16px; max-height: 52vh; overflow: auto; }
+
+/* 3 kalit */
+.keys { padding: 18px; display: grid; gap: 16px; }
+.key { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.key .k { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: var(--surface-2); border: 1.5px solid var(--edge); color: var(--ink-2); }
+.key.ok .k { color: var(--good); border-color: var(--good); background: color-mix(in srgb, var(--good) 13%, transparent); }
+.key.wait .k { color: var(--gold); border-color: var(--gold); }
+.key b { display: block; font-size: 14.5px; }
+.key span { color: var(--ink-2); font-size: 12.5px; }
+.state { font-size: 12px; font-weight: 800; color: var(--ink-3); }
+.key.ok .state { color: var(--good); } .key.wait .state { color: var(--gold); }
+
+/* Ro'yxatlar */
+.list { display: grid; gap: 10px; }
+.item { padding: 14px 16px; display: grid; gap: 6px; text-align: left; width: 100%; text-decoration: none; color: inherit; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.row b { font-size: 14.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item span { color: var(--ink-2); font-size: 13px; }
+.mono { font: 500 12px var(--font-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--edge); }
+.seg button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--bg-2); color: var(--ink); box-shadow: 0 2px 8px -4px var(--shadow); }
+.seg svg.i { width: 16px; height: 16px; }
+
+/* Pastki sheet — prujina fizikasi bilan, pastga tortib yopiladi */
+.scrim { position: fixed; inset: 0; z-index: 40; background: var(--scrim); opacity: 0; transition: opacity .3s; }
+.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; margin: 0 auto; width: min(520px, 100%); touch-action: none;
+  padding: 10px max(18px, env(safe-area-inset-left, 0px)) calc(22px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-right, 0px));
+  border-radius: 28px 28px 0 0; display: grid; gap: 14px; border: 1px solid var(--edge); border-bottom: 0;
+  background: color-mix(in srgb, var(--bg-2) 84%, transparent); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 -20px 50px -20px var(--shadow); will-change: transform; transform: translate3d(0, 100%, 0); }
+.grabber { justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--edge); margin-bottom: 2px; }
+.sheet h3 { margin: 0; font: 700 17px/1.3 var(--font-display); }
+.sheet p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+.roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.role { padding: 14px; border-radius: 18px; text-align: left; background: var(--surface-2); border: 1px solid var(--edge); display: grid; gap: 4px; }
+.role:last-child { grid-column: 1 / -1; }
+.role svg.i { width: 24px; height: 24px; color: var(--violet); }
+.role b { font-size: 14px; }
+.role span { color: var(--ink-3); font-size: 11.5px; }
+
+/* Suzuvchi dock (iOS uslubi) */
+.dock { position: fixed; z-index: 30; left: 0; right: 0; margin: 0 auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: min(300px, calc(100% - 32px)); height: var(--dock-h); display: grid; grid-template-columns: 1fr 76px 1fr; align-items: center;
+  padding: 0 8px; border-radius: 28px; border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--bg-2) 72%, transparent); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--hi), 0 16px 36px -18px var(--shadow); }
+.tab { position: relative; display: grid; justify-items: center; gap: 3px; padding: 7px 0; border-radius: 18px; color: var(--ink-3);
+  font-size: 10.5px; font-weight: 800; transition: color .25s; }
+.tab svg.i { width: 22px; height: 22px; }
+.tab.active { color: var(--ink); }
+.tab::after { content: ""; position: absolute; bottom: 1px; width: 5px; height: 5px; border-radius: 50%; background: var(--violet);
+  transform: scale(0); transition: transform .35s var(--spring); }
+.tab.active::after { transform: scale(1); }
+.fab { justify-self: center; width: 60px; height: 60px; margin-top: -30px; border-radius: 50%; position: relative; overflow: hidden;
+  box-shadow: 0 10px 26px -8px var(--violet); transition: transform .3s var(--spring); }
+.fab:active { transform: scale(.92); }
+.fab .ring { width: 180%; animation-duration: 7s; }
+.fab span { position: absolute; inset: 3px; border-radius: 50%; background: var(--bg-2); display: grid; place-items: center; color: var(--ink); }
+.fab svg.i { width: 26px; height: 26px; stroke-width: 2.2; }
+
+.toast { position: fixed; z-index: 50; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px);
+  bottom: calc(var(--dock-h) + 30px + env(safe-area-inset-bottom, 0px)); padding: 10px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 700;
+  color: var(--bg); background: var(--ink); animation: enter .35s var(--spring); }
+
+
+/* ---------- Navigator ---------- */
+.screen.center { text-align: center; justify-items: center; }
+.screen.center .btn, .screen.center .two { width: 100%; }
+.eyebrow { margin: 0; color: var(--violet); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.lead.left { text-align: left; }
+.lead.left p { margin: 0; }
+.dots { display: flex; gap: 6px; justify-content: center; }
+.dots i { width: 22px; height: 4px; border-radius: 4px; background: var(--edge); transition: background-color .3s; }
+.dots i.on { background: var(--violet); }
+.opts { display: grid; gap: 10px; }
+.opt { padding: 15px 16px; border-radius: 16px; text-align: left; font-weight: 700; font-size: 15px; background: var(--surface-2); border: 1px solid var(--edge); }
+.opt:hover { border-color: var(--violet); }
+.inline-in { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 18px; }
+.field-in { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 500 15px/1.5 var(--font-body); resize: none; width: 100%; }
+.field-in::placeholder { color: var(--ink-3); }
+.link { justify-self: center; color: var(--ink-3); font-size: 13.5px; font-weight: 700; padding: 6px 10px; text-decoration: underline; text-underline-offset: 3px; }
+.hero-ic { justify-self: center; width: 76px; height: 76px; border-radius: 26px; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--violet), var(--cyan)); box-shadow: 0 14px 30px -12px var(--violet); }
+.hero-ic svg.i { width: 36px; height: 36px; stroke-width: 2; }
+.hero-ic.good { background: linear-gradient(135deg, var(--good), var(--cyan)); }
+.route-card { display: grid; grid-template-columns: 34px minmax(0, 1fr) 18px; gap: 12px; align-items: center; padding: 15px; text-align: left; width: 100%; }
+.route-card .num { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font: 700 14px var(--font-display);
+  background: color-mix(in srgb, var(--violet) 14%, transparent); color: var(--violet); }
+.rc-body { display: grid; gap: 3px; min-width: 0; }
+.rc-body b { font-size: 15px; }
+.rc-body > span { color: var(--ink-2); font-size: 13px; }
+.rc-meta { display: flex; gap: 8px; align-items: center; font-size: 12px !important; color: var(--ink-3) !important; }
+.rc-meta em { font-style: normal; font-weight: 800; color: var(--good); }
+.chev { transform: rotate(180deg); color: var(--ink-3); }
+.mini-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.mini { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: var(--surface-2); border: 1px solid var(--edge); color: var(--ink-2); }
+.mini svg.i { width: 16px; height: 16px; }
+.step-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.step-top .eyebrow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step-card { padding: 20px 18px; display: grid; gap: 16px; }
+.step-card h2 { margin: 0; font: 700 clamp(18px, 5vw, 22px)/1.3 var(--font-display); text-wrap: balance; }
+.infos { display: grid; gap: 10px; }
+.info { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14.5px; }
+.info svg.i { color: var(--violet); margin-top: 2px; }
+.info small { display: block; color: var(--ink-3); font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.btn.big { padding: 17px; font-size: 16px; border-radius: 18px; }
+.icon-row { display: flex; gap: 10px; justify-content: center; }
+.icb { flex: 1; max-width: 120px; display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 16px; font-size: 12px; font-weight: 800;
+  background: var(--surface); border: 1px solid var(--edge); color: var(--ink-2); }
+.icb svg.i { width: 22px; height: 22px; color: var(--violet); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.info .src { display: block; margin-top: 2px; color: var(--violet); font-size: 12.5px; font-weight: 600; text-decoration: none; }
+.disc { display: block; margin-top: 8px; color: var(--ink-3); font-size: 12px; }
+.head p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.top-r { display: flex; align-items: center; gap: 8px; }
+.top-ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--edge); }
+.top-ic svg { width: 18px; height: 18px; }
+/* Katta yozuv: kam element, oʻqilishi oson */
+body { font-size: 17px; }
+.lead h2 { font-size: clamp(25px, 7.4vw, 33px); }
+.lead p { font-size: 16.5px; }
+.field textarea, .typed { font-size: 18px !important; line-height: 1.45 !important; }
+.chip { font-size: 15px; padding: 10px 14px; }
+.note { font-size: 13.5px; }
+.btn { font-size: 17px; padding: 16px; }
+.btn.big { font-size: 18.5px; padding: 19px; }
+.opt { font-size: 17.5px; padding: 18px; }
+.rc-body b { font-size: 18px; }
+.step-card h2 { font-size: clamp(23px, 6.4vw, 28px); }
+.info { font-size: 16.5px; }
+.info small { font-size: 12.5px; }
+.icb { font-size: 13.5px; }
+.head p { font-size: 17px; }
+.link { font-size: 15px; }
+.toast { font-size: 15px; }
+.sec li { font-size: 16px; }
+.field-in { font-size: 17px; }
+.tab { font-size: 12.5px; }
+.seg.four { grid-template-columns: repeat(2, 1fr); }
+.seg.four button { padding: 11px 6px; font-size: 15px; }
+.mic { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 46px; min-width: 46px; padding: 0 12px; margin-left: auto;
+  border-radius: 999px; color: var(--violet); background: var(--surface-2); border: 1px solid var(--edge); font-weight: 800; }
+.mic svg.i { width: 22px; height: 22px; }
+.mic.on { color: #fff; background: var(--bad); border-color: transparent; animation: micpulse 1.2s ease-in-out infinite; }
+@keyframes micpulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--bad) 22%, transparent); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
+}
+</style>
+
+<div class="aurora" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-cases" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16M7.5 20h9M5 7.5h14M12 4.5 12 4"/><path d="M5 7.5 2.5 13a2.6 2.6 0 0 0 5 0zM19 7.5 16.5 13a2.6 2.6 0 0 0 5 0z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m20.5 11.5-8.4 8.4a5 5 0 0 1-7.1-7.1l8.4-8.4a3.4 3.4 0 0 1 4.8 4.8l-8.3 8.3a1.8 1.8 0 0 1-2.5-2.5l7.6-7.6"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 19.5H3z"/><path d="M12 10v4.5M12 17v.1"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3.5h3.5l1.8 4.6-2.4 1.5a11 11 0 0 0 5.5 5.5l1.5-2.4 4.6 1.8V18a2.5 2.5 0 0 1-2.5 2.5A15.5 15.5 0 0 1 3.5 6 2.5 2.5 0 0 1 6 3.5z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 19.5 6v5.5c0 4.6-3.2 7.9-7.5 9-4.3-1.1-7.5-4.4-7.5-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5M14 9l2 2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-case" viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V5.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3.5 12.5h17"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2.2l2.3 10.5h10.8L20.5 7H6.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 24 24"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c3 2.4 8 2.4 11 0V11M21.5 9v5"/></symbol>
+  <symbol id="i-helmet" viewBox="0 0 24 24"><path d="M3 17.5h18v2H3zM5 17.5V15a7 7 0 0 1 14 0v2.5M10 8.4V6.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.9M9 17.5V12M15 17.5V12"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h7l5 5v12H7a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M14 3.5v5h5M9.5 13h6M9.5 16.5h6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5.5 15H5a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 4h8a1.5 1.5 0 0 1 1.5 1.5V6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 20.5V8.5L12 3.5l8 5v12M2.5 20.5h19M9 20.5v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 6.5a1 1 0 0 1 1-1h4.8l2 2h8.2a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M3.5 10h17M15.5 14.5h2"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4.5 5h15a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4.5 3.5V6a1 1 0 0 1 1-1z"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3.5 20 8v8l-8 4.5L4 16V8zM4 8l8 4.5L20 8M12 12.5v8"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 8.7 8.4 12s1.2 6.1 3.6 8.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5 13.9 9 19.5 11 13.9 13 12 18.5 10.1 13 4.5 11 10.1 9z"/></symbol>
+</svg>
+<div class="app" id="app"></div>
+<nav class="dock" id="dock" aria-label="Bo'limlar"></nav>
+<div id="layer"></div>
+
+<script>
+'use strict';
+// ===================== Sozlamalar =====================
+// API: ?api=https://... yoki window.LEXNAV_API. Bo'lmasa — demo rejim (internetsiz ham ishlaydi).
+const params = new URLSearchParams(location.search);
+const API = (params.get('api') || window.LEXNAV_API || '').replace(/\/$/, '');
+const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform !== 'unknown' ? window.Telegram.WebApp : null;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ===================== Mavzu (Telegram → tanlov → tizim) =====================
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let themePref = store.get('lexnav-theme') || 'auto';
+function systemDark() { return TG ? TG.colorScheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+function isDark() { return themePref === 'dark' || (themePref === 'auto' && systemDark()); }
+function applyTheme() {
+  const root = document.documentElement;
+  if (themePref === 'auto' && !TG) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', isDark() ? 'dark' : 'light');
+  const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+  if (TG) { try { TG.setHeaderColor(bg); TG.setBackgroundColor(bg); TG.setBottomBarColor && TG.setBottomBarColor(bg); } catch (e) {} }
+  orb && orb.setTheme(isDark());
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+if (TG) { TG.ready(); TG.expand(); TG.onEvent('themeChanged', applyTheme); }
+
+// ===================== Tillar (oʻzbek — asosiy, rus, ingliz) =====================
+const I18N = {
+  uz: {
+    appName: 'Huquqiy Navigator', basis: 'lex.uz asosida', hello: 'Salom, {name}', live: 'Jonli', demo: 'Demo rejim',
+    heroTitle: 'Nima boʻldi?',
+    heroSub: 'Yozing yoki ovoz yuboring — yoʻlini koʻrsataman.',
+    askLabel: 'Vaziyatingizni yozing', send: 'Yuborish', attach: 'Rasm', micRec: 'Ovozli xabar yozish', micStop: 'Toʻxtatish va yuborish',
+    micDenied: 'Mikrofonga ruxsat berilmadi. Telegram sozlamalarida ruxsat bering yoki matn yozing.', micNo: 'Bu qurilmada ovoz yozib boʻlmaydi — matn yozing.', micShort: 'Juda qisqa — yana bir bor gapiring.', quick: 'Tez boshlash',
+    quickItems: [
+      { t: 'Ish haqi berilmayapti', v: 'Ish beruvchi 2 oydan beri ish haqimni bermayapti, soʻrasam ishdan boʻshataman deyapti.' },
+      { t: 'Telefonda tahdid', v: 'Telefonda notanish odam meni soʻkdi va uyingga borib oʻldiraman deb qoʻrqitdi. Suhbatni yozib oldim.' },
+      { t: 'Shubhali SMS', v: 'SMS keldi: kartangiz bloklandi, blokdan chiqarish uchun kodni shu raqamga yuboring. Kodni yubordim, kartamdan 3 million soʻm yechib olishdi.' },
+      { t: 'Dekanat javob bermayapti', v: 'Universitetda dekanatga ariza berdim, bir oy boʻldi, javob yoʻq. Qayerga shikoyat qilsam boʻladi?' },
+      { t: 'Sifatsiz tovar', v: 'Doʻkondan telefon oldim, 3 kunda buzildi. Sotuvchi uni qaytarib olmayapti, pulni qaytarmayman deyapti.' }],
+    prompts: ['Ish beruvchi 2 oydan beri ish haqimni bermayapti…', 'Telefonda notanish odam meni qoʻrqitdi…', 'SMS keldi: kartangiz bloklandi, kodni yuboring…',
+              'Dekanatga ariza berdim, bir oydan beri javob yoʻq…', 'Doʻkondan olgan telefonim 3 kunda buzildi…'],
+    statArticles: 'modda bazada', statLaws: 'qonun va kodeks', statKeysB: '3 kalit', statKeys: 'soxta murojaatga qarshi',
+    noteShort: 'Bu huquqiy maslahat emas, yakuniy baho yurist zimmasida. Tashkilotning ichki tartib qoidalari hisobga olinmagan.',
+    dangerTitle: 'Xavf boʻlsa, hozir qoʻngʻiroq qiling', dangerText: '112, 102 — politsiya, 103 — tez tibbiy yordam. Xavfsiz joyga oʻtgach, davom eting.',
+    dangerBtn: 'Tushundim, davom etish', roleTitle: 'Bu vaziyatda siz kimsiz?',
+    roleSub: 'Tanlov faqat shu murojaat uchun: javob vaziyatingizga moslab, tezroq va aniqroq beriladi.',
+    roles: { talaba: ['Talaba', 'oʻqish, dekanat, yotoqxona'], xodim: ['Xodim', 'ish haqi, ishdan boʻshatish'], tadbirkor: ['Tadbirkor', 'shartnoma, hamkor'],
+             xaridor: ['Xaridor', 'sifatsiz tovar, xizmat'], boshqa: ['Boshqa', 'fuqaro sifatida'] },
+    analyzing: 'Tahlil qilyapman', analyzingSub: 'Odatda 10–15 soniya',
+    steps: ['Xavf belgilari tekshirildi', 'Soha va daraja aniqlanmoqda', 'lex.uz bazasidan moddalar qidirilmoqda', 'Javob tayyorlanmoqda', 'Har bir modda bazadan tekshirilmoqda'],
+    errAnalyze: 'Tahlil qilib boʻlmadi. Bir daqiqadan soʻng qayta urinib koʻring.',
+    levels: { oddiy: 'Oddiy', muhim: 'Muhim', jiddiy: 'Jiddiy', xavf: 'Xavf' },
+    sos: 'Xavf boʻlsa, hozir qoʻngʻiroq qiling: 112, 102 (politsiya), 103 (tez yordam).',
+    hRights: 'Huquqlaringiz', hDuties: 'Nima qilishingiz kerak', hWhere: 'Qayerga murojaat qilish', hProof: 'Dalillarni saqlang', hLaw: 'Qonun (lex.uz)',
+    article: '{num}-modda', btnApp: 'Ariza tayyorlash', btnEsc: 'Idoraga yuborish (3 kalit)', btnNew: 'Yangi murojaat',
+    disclaimer: 'Bu huquqiy maslahat emas, yakuniy baho yurist zimmasida. Javob umumiy qonunchilikka asoslangan: tashkilotning ichki tartib qoidalari (masalan, universitetning ichki tartib qoidalari) hisobga olinmagan.',
+    errApp: 'Arizani tayyorlab boʻlmadi, qayta urinib koʻring.', appLoading: 'Ariza matni tayyorlanmoqda…', copied: 'Nusxa olindi', selected: 'Matn belgilandi, nusxa oling',
+    appTitle: 'Ariza loyihasi', appSub: '[Qavs ichidagi] joylarni oʻzingiz toʻldiring.', copy: 'Nusxa olish', back: 'Natijaga qaytish',
+    appNote: 'Arizani yozma ravishda, shaxsan yoki my.gov.uz orqali yuborishingiz mumkin. Qabul qilinganini tasdiqlovchi hujjatni saqlang.',
+    errEsc: 'Hozir yuborib boʻlmadi. Botdagi «Idoraga yuborish» tugmasidan foydalaning.',
+    keyStates: { ok: 'Tasdiqlandi', wait: 'Kutilmoqda', idle: '—' }, escTitle: 'Idoraga yuborish',
+    escSub: 'Soxta murojaatlarning oldini olish uchun 3 ta kalit: hech narsa tekshiruvsiz yuborilmaydi.',
+    k1: ['1-kalit: shaxs tasdigʻi', 'Telegram orqali telefon raqami, kunlik limit'], k2: ['2-kalit: AI ishonchlilik bali', 'Izchillik, faktlar, dalillar'],
+    k2score: 'Ball: {score}/100 (kamida 50 kerak)', k3: ['3-kalit: klinika yuristi', 'Yuridik klinika yuristi tasdiqlaydi'],
+    escNote: 'Telefon raqami botdagi «Telefon raqamimni yuborish» tugmasi orqali tasdiqlanadi. Yurist tasdiqlagach, murojaat masʼul idoraga yetkaziladi va sizga xabar keladi.',
+    toBot: 'Botga oʻtish (1-kalit)', cases: 'Murojaatlarim', loading: 'Yuklanmoqda…', casesEmpty: 'Hali murojaat yoʻq. Pastdagi plyus tugmasi bilan boshlang.',
+    casesErr: 'Murojaatlarni yuklab boʻlmadi.', laws: 'Qonun bazasi', lawsSub: 'Bot faqat shu hujjatlardagi moddalarga tayanadi; har bir modda lex.uz dagi asl matnga havola qilinadi.',
+    articlesN: '{n} modda', lawsErr: 'Roʻyxatni yuklab boʻlmadi.', settings: 'Loyiha va sozlamalar', language: 'Til', theme: 'Mavzu',
+    themeAuto: 'Avto', themeLight: 'Yorugʻ', themeDark: 'Qorongʻi',
+    about: 'Fuqarolarga davlat tashkilotlariga murojaat qilishda yordam beradi: vaziyatni qonun bilan solishtiradi, kimga, qayerga va qachon murojaat qilishni aytadi, ariza tayyorlaydi. Jiddiy murojaatlar Yuridik klinika yuristi tekshiruvidan oʻtib, idoraga yetkaziladi.',
+    privacy: 'Maxfiylik', privacyItems: ['Ovoz va rasm matnga oʻgirilgach, oʻchiriladi.', 'Idoraga murojaat faqat sizning roziligingiz va yurist tekshiruvi bilan yuboriladi.', 'Shoshilinch holatda: 102 — politsiya, 103 — tez yordam.'],
+    footer: 'LexHackathon 2026 · Huquqiy xizmatlar treki', tabHome: 'Bosh', tabCases: 'Murojaatlar', tabLaws: 'Qonunlar', tabAbout: 'Loyiha', fab: 'Yangi murojaat',
+    consent: 'Rozilik', consentItems: ['Yuborgan matn, ovoz va rasmlaringiz faqat vaziyatni tahlil qilish uchun ishlatiladi.', 'Ovoz va rasm matnga oʻgirilgach, asl fayl oʻchiriladi.',
+      'Tahlil uchun matn sunʼiy intellekt xizmatlariga (Groq, Google Gemini) yuboriladi.', 'Murojaat idoraga faqat sizning roziligingiz va Yuridik klinika yuristining tekshiruvi bilan yuboriladi.'],
+    agree: 'Roziman', disagree: 'Yoʻq',
+  },
+  ru: {
+    appName: 'Правовой навигатор', basis: 'на основе lex.uz', hello: 'Здравствуйте, {name}', live: 'Онлайн', demo: 'Демо-режим',
+    heroTitle: 'Что случилось?',
+    heroSub: 'Напишите или отправьте голос — покажу путь.',
+    askLabel: 'Опишите ситуацию', send: 'Отправить', attach: 'Фото', micRec: 'Записать голосовое', micStop: 'Остановить и отправить',
+    micDenied: 'Нет доступа к микрофону. Разрешите его в настройках Telegram или напишите текстом.', micNo: 'На этом устройстве нельзя записать голос — напишите текстом.', micShort: 'Слишком коротко — скажите ещё раз.', quick: 'Быстрый старт',
+    quickItems: [
+      { t: 'Не платят зарплату', v: 'Работодатель уже 2 месяца не выплачивает зарплату, а когда я спрашиваю, угрожает уволить.' },
+      { t: 'Угрозы по телефону', v: 'Незнакомый человек по телефону оскорбил меня и пригрозил прийти домой и убить. Я записал разговор.' },
+      { t: 'Подозрительное SMS', v: 'Пришло SMS: карта заблокирована, для разблокировки отправьте код на этот номер. Я отправил код, и с карты списали 3 миллиона сумов.' },
+      { t: 'Деканат не отвечает', v: 'Я подал заявление в деканат университета, прошёл месяц, ответа нет. Куда можно пожаловаться?' },
+      { t: 'Некачественный товар', v: 'Купил телефон в магазине, через 3 дня он сломался. Продавец не принимает его обратно и отказывается вернуть деньги.' }],
+    prompts: ['Работодатель 2 месяца не платит зарплату…', 'Незнакомец угрожал мне по телефону…', 'SMS: карта заблокирована, отправьте код…',
+              'Подал заявление в деканат, месяц нет ответа…', 'Купленный телефон сломался через 3 дня…'],
+    statArticles: 'статей в базе', statLaws: 'законов и кодексов', statKeysB: '3 ключа', statKeys: 'против ложных обращений',
+    noteShort: 'Это не юридическая консультация, окончательную оценку даёт юрист. Внутренние правила организации не учитывались.',
+    dangerTitle: 'При угрозе звоните прямо сейчас', dangerText: '112, 102 — полиция, 103 — скорая помощь. Когда будете в безопасности, продолжите.',
+    dangerBtn: 'Понятно, продолжить', roleTitle: 'Кто вы в этой ситуации?',
+    roleSub: 'Выбор действует только для этого обращения: ответ будет точнее и быстрее.',
+    roles: { talaba: ['Студент', 'учёба, деканат, общежитие'], xodim: ['Работник', 'зарплата, увольнение'], tadbirkor: ['Предприниматель', 'договор, партнёр'],
+             xaridor: ['Покупатель', 'некачественный товар, услуга'], boshqa: ['Другое', 'как гражданин'] },
+    analyzing: 'Анализирую', analyzingSub: 'Обычно 10–15 секунд',
+    steps: ['Признаки опасности проверены', 'Определяется сфера и уровень', 'Поиск статей в базе lex.uz', 'Готовится ответ', 'Каждая статья сверяется с базой'],
+    errAnalyze: 'Не удалось выполнить анализ. Попробуйте ещё раз через минуту.',
+    levels: { oddiy: 'Обычная', muhim: 'Важная', jiddiy: 'Серьёзная', xavf: 'Опасность' },
+    sos: 'При угрозе звоните сейчас: 112, 102 (полиция), 103 (скорая помощь).',
+    hRights: 'Ваши права', hDuties: 'Что нужно сделать', hWhere: 'Куда обращаться', hProof: 'Сохраните доказательства', hLaw: 'Закон (lex.uz)',
+    article: 'ст. {num}', btnApp: 'Подготовить заявление', btnEsc: 'Отправить в орган (3 ключа)', btnNew: 'Новое обращение',
+    disclaimer: 'Это не юридическая консультация, окончательную оценку даёт юрист. Ответ основан на общем законодательстве: внутренние правила организации (например, правила внутреннего распорядка университета) не учитывались.',
+    errApp: 'Не удалось подготовить заявление, попробуйте ещё раз.', appLoading: 'Готовлю текст заявления…', copied: 'Скопировано', selected: 'Текст выделен, скопируйте его',
+    appTitle: 'Проект заявления', appSub: 'Заполните места [в скобках] самостоятельно.', copy: 'Копировать', back: 'Назад к результату',
+    appNote: 'Заявление можно подать письменно, лично или через my.gov.uz. Сохраните документ, подтверждающий его приём.',
+    errEsc: 'Сейчас не удалось отправить. Воспользуйтесь кнопкой «Отправить в орган» в боте.',
+    keyStates: { ok: 'Подтверждено', wait: 'Ожидается', idle: '—' }, escTitle: 'Отправка в орган',
+    escSub: '3 ключа против ложных обращений: ничего не отправляется без проверки.',
+    k1: ['Ключ 1: подтверждение личности', 'Номер телефона через Telegram, дневной лимит'], k2: ['Ключ 2: оценка достоверности ИИ', 'Последовательность, факты, доказательства'],
+    k2score: 'Балл: {score}/100 (нужно не меньше 50)', k3: ['Ключ 3: юрист клиники', 'Подтверждает юрист Юридической клиники'],
+    escNote: 'Номер телефона подтверждается в боте кнопкой «Отправить мой номер». После одобрения юристом обращение будет направлено в ответственный орган, и вы получите уведомление.',
+    toBot: 'Перейти в бот (ключ 1)', cases: 'Мои обращения', loading: 'Загрузка…', casesEmpty: 'Обращений пока нет. Начните с кнопки «плюс» внизу.',
+    casesErr: 'Не удалось загрузить обращения.', laws: 'База законов', lawsSub: 'Бот опирается только на статьи этих документов; каждая статья ссылается на исходный текст на lex.uz.',
+    articlesN: '{n} статей', lawsErr: 'Не удалось загрузить список.', settings: 'Проект и настройки', language: 'Язык', theme: 'Тема',
+    themeAuto: 'Авто', themeLight: 'Светлая', themeDark: 'Тёмная',
+    about: 'Помогает гражданам обращаться в государственные органы: сопоставляет ситуацию с законом, подсказывает, куда, к кому и когда обращаться, готовит заявление. Серьёзные обращения проверяет юрист Юридической клиники и направляет в орган.',
+    privacy: 'Конфиденциальность', privacyItems: ['Голос и изображения удаляются после перевода в текст.', 'Обращение направляется в орган только с вашего согласия и после проверки юристом.', 'В экстренной ситуации: 102 — полиция, 103 — скорая помощь.'],
+    footer: 'LexHackathon 2026 · Трек «Юридические услуги»', tabHome: 'Главная', tabCases: 'Обращения', tabLaws: 'Законы', tabAbout: 'Проект', fab: 'Новое обращение',
+    consent: 'Согласие', consentItems: ['Ваши текст, голос и изображения используются только для анализа ситуации.', 'После перевода в текст исходный файл удаляется.',
+      'Для анализа текст передаётся сервисам ИИ (Groq, Google Gemini).', 'Обращение направляется в орган только с вашего согласия и после проверки юристом Юридической клиники.'],
+    agree: 'Согласен', disagree: 'Нет',
+  },
+  en: {
+    appName: 'Legal Navigator', basis: 'based on lex.uz', hello: 'Hello, {name}', live: 'Live', demo: 'Demo mode',
+    heroTitle: 'What happened?',
+    heroSub: 'Type or send a voice note — I’ll show the way.',
+    askLabel: 'Describe your situation', send: 'Send', attach: 'Photo', micRec: 'Record a voice message', micStop: 'Stop and send',
+    micDenied: 'No microphone access. Allow it in Telegram settings or type instead.', micNo: 'Voice recording is not available on this device — please type.', micShort: 'Too short — please say it again.', quick: 'Quick start',
+    quickItems: [
+      { t: 'Salary not paid', v: 'My employer has not paid my salary for 2 months and threatens to fire me when I ask.' },
+      { t: 'Threat by phone', v: 'A stranger insulted me on the phone and threatened to come to my home and kill me. I recorded the call.' },
+      { t: 'Suspicious SMS', v: 'I got an SMS: your card is blocked, send the code to this number to unblock it. I sent the code and 3 million soums were taken from my card.' },
+      { t: 'Dean’s office silent', v: 'I submitted an application to the dean’s office a month ago and got no reply. Where can I complain?' },
+      { t: 'Faulty product', v: 'I bought a phone in a shop and it broke after 3 days. The seller refuses to take it back or refund the money.' }],
+    prompts: ['My employer hasn’t paid my salary for 2 months…', 'A stranger threatened me on the phone…', 'SMS: your card is blocked, send the code…',
+              'The dean’s office hasn’t replied for a month…', 'The phone I bought broke after 3 days…'],
+    statArticles: 'articles in the base', statLaws: 'laws and codes', statKeysB: '3 keys', statKeys: 'against false appeals',
+    noteShort: 'This is not legal advice; the final assessment is up to a lawyer. An organisation’s internal rules were not taken into account.',
+    dangerTitle: 'If you are in danger, call now', dangerText: '112, 102 — police, 103 — ambulance. Continue once you are safe.',
+    dangerBtn: 'Understood, continue', roleTitle: 'Who are you in this situation?',
+    roleSub: 'This choice applies only to this appeal and makes the answer faster and more accurate.',
+    roles: { talaba: ['Student', 'studies, dean’s office, dorm'], xodim: ['Employee', 'salary, dismissal'], tadbirkor: ['Entrepreneur', 'contract, partner'],
+             xaridor: ['Buyer', 'faulty product, service'], boshqa: ['Other', 'as a citizen'] },
+    analyzing: 'Analysing', analyzingSub: 'Usually 10–15 seconds',
+    steps: ['Danger signs checked', 'Identifying the area and level', 'Searching articles in lex.uz', 'Preparing the answer', 'Checking each article against the base'],
+    errAnalyze: 'The analysis failed. Please try again in a minute.',
+    levels: { oddiy: 'Routine', muhim: 'Important', jiddiy: 'Serious', xavf: 'Danger' },
+    sos: 'If you are in danger, call now: 112, 102 (police), 103 (ambulance).',
+    hRights: 'Your rights', hDuties: 'What you should do', hWhere: 'Where to apply', hProof: 'Keep the evidence', hLaw: 'Law (lex.uz)',
+    article: 'Art. {num}', btnApp: 'Draft the application', btnEsc: 'Send to the authority (3 keys)', btnNew: 'New appeal',
+    disclaimer: 'This is not legal advice; the final assessment is up to a lawyer. The answer is based on general legislation: an organisation’s internal rules (for example, a university’s internal regulations) were not taken into account.',
+    errApp: 'The application could not be drafted, please try again.', appLoading: 'Drafting the application…', copied: 'Copied', selected: 'Text selected — copy it',
+    appTitle: 'Draft application', appSub: 'Drafted in Uzbek, the state language. Fill in the [bracketed] fields yourself.', copy: 'Copy', back: 'Back to the result',
+    appNote: 'You can submit the application in writing, in person or via my.gov.uz. Keep proof that it was received.',
+    errEsc: 'Could not send right now. Use the “Send to the authority” button in the bot.',
+    keyStates: { ok: 'Confirmed', wait: 'Pending', idle: '—' }, escTitle: 'Send to the authority',
+    escSub: '3 keys against false appeals: nothing is sent without review.',
+    k1: ['Key 1: identity check', 'Phone number via Telegram, daily limit'], k2: ['Key 2: AI credibility score', 'Consistency, facts, evidence'],
+    k2score: 'Score: {score}/100 (at least 50 needed)', k3: ['Key 3: clinic lawyer', 'Confirmed by a Legal Clinic lawyer'],
+    escNote: 'Your phone number is confirmed in the bot with the “Share my phone number” button. Once a lawyer approves, the appeal is forwarded to the responsible authority and you are notified.',
+    toBot: 'Go to the bot (key 1)', cases: 'My appeals', loading: 'Loading…', casesEmpty: 'No appeals yet. Start with the plus button below.',
+    casesErr: 'Could not load your appeals.', laws: 'Law base', lawsSub: 'The bot relies only on articles from these documents; each article links to the original text on lex.uz.',
+    articlesN: '{n} articles', lawsErr: 'Could not load the list.', settings: 'Project and settings', language: 'Language', theme: 'Theme',
+    themeAuto: 'Auto', themeLight: 'Light', themeDark: 'Dark',
+    about: 'Helps citizens appeal to state bodies: compares the situation with the law, tells where, to whom and when to apply, and drafts the application. Serious appeals are reviewed by a Legal Clinic lawyer and forwarded to the authority.',
+    privacy: 'Privacy', privacyItems: ['Voice and images are deleted after conversion to text.', 'An appeal is sent to an authority only with your consent and after a lawyer’s review.', 'In an emergency: 102 — police, 103 — ambulance.'],
+    footer: 'LexHackathon 2026 · Legal Services track', tabHome: 'Home', tabCases: 'Appeals', tabLaws: 'Laws', tabAbout: 'About', fab: 'New appeal',
+    consent: 'Consent', consentItems: ['Your text, voice and images are used only to analyse your situation.', 'Once converted to text, the original file is deleted.',
+      'For the analysis, the text is sent to AI services (Groq, Google Gemini).', 'An appeal is sent to an authority only with your consent and after review by a Legal Clinic lawyer.'],
+    agree: 'I agree', disagree: 'No',
+  },
+};
+const LANG_NAMES = { uz: 'Oʻzbekcha', ru: 'Русский', en: 'English' };
+// Tanlov: Ўзбекча (kirill, standart) · Özbekça (yangi lotin) · Русский · English
+const LANG_CHOICES = [['uz', 'cyrl', 'Ўзбекча'], ['uz', 'latn', 'Özbekça'], ['ru', null, 'Русский'], ['en', null, 'English']];
+const qLang = params.get('lang'), qScript = params.get('script');
+let LANG = (qLang in I18N && qLang) || store.get('lexnav-lang') || 'uz';
+let SCRIPT = (['cyrl', 'latn'].includes(qScript) && qScript) || store.get('lexnav-script') || 'cyrl';
+function L(key, vars) {
+  let v = (I18N[LANG] && I18N[LANG][key]) ?? I18N.uz[key];
+  if (vars && typeof v === 'string') for (const [k, x] of Object.entries(vars)) v = v.replace('{' + k + '}', x);
+  return v;
+}
+function setLang(l, sc) { LANG = l; if (sc) { SCRIPT = sc; store.set('lexnav-script', sc); } store.set('lexnav-lang', l); document.documentElement.lang = htmlLang(); }
+const htmlLang = () => LANG === 'uz' ? (SCRIPT === 'latn' ? 'uz-Latn' : 'uz-Cyrl') : LANG;
+document.documentElement.lang = htmlLang();
+
+// ===================== Oʻzbek yozuvi: kirill (standart) / yangi lotin (OʻRQ–1184, 21.10.2026) =====================
+// Lugʻat va server javoblari amaldagi lotinda; koʻrsatishda tanlangan yozuvga oʻgiriladi (bot/script.py bilan bir xil qoida).
+const APO = "ʻʼ'‘’`";
+const SKIP_RE = /(<[^>]*>|&#?\w+;|https?:\/\/\S+|\b[\w.+-]+@[\w-]+\.[\w.]+|\b[\w-]+(?:\.[\w-]+)*\.(?:uz|com|ru|org|net|me)\b|\{[^}]*\}|\b(?:PDF|AI|Telegram|Yandex|Groq|Gemini|lex)\b)/g;
+const CYR1 = { a: 'а', b: 'б', d: 'д', e: 'е', f: 'ф', g: 'г', h: 'ҳ', i: 'и', j: 'ж', k: 'к', l: 'л', m: 'м', n: 'н', o: 'о', p: 'п', q: 'қ',
+  r: 'р', s: 'с', t: 'т', u: 'у', v: 'в', x: 'х', y: 'й', z: 'з', c: 'к', w: 'в' };
+const CYR2 = { sh: 'ш', ch: 'ч', yo: 'ё', yu: 'ю', ya: 'я', ye: 'е' };
+const VOW = /[aeiouAEIOUоаеиуўэёюяОАЕИУЎЭЁЮЯ]/;
+const ISL = /\p{L}/u;
+const TOK = new RegExp(`([oOgG][${APO}])|(sh|Sh|SH|ch|Ch|CH|(?:yo|Yo|YO)(?![${APO}])|yu|Yu|YU|ya|Ya|YA|ye|Ye|YE)|([${APO}])|([A-Za-z])`, 'g');
+const up = (c, big) => big ? c.toUpperCase() : c;
+function cyrlSeg(s) {
+  let out = '', pos = 0;
+  for (const m of s.matchAll(TOK)) {
+    out += s.slice(pos, m.index); pos = m.index + m[0].length;
+    const prev = out.slice(-1), [, og, di, apo, ch] = m;
+    if (og) out += up(og[0].toLowerCase() === 'o' ? 'ў' : 'ғ', og[0] !== og[0].toLowerCase());
+    else if (di) out += up(CYR2[di.toLowerCase()], di[0] !== di[0].toLowerCase());
+    else if (apo) out += (ISL.test(prev) && ISL.test(s[pos] || '')) ? 'ъ' : apo;
+    else { const lo = ch.toLowerCase(); out += up(lo === 'e' && (!ISL.test(prev) || VOW.test(prev)) ? 'э' : CYR1[lo], ch !== lo); }
+  }
+  return out + s.slice(pos);
+}
+const NEWL = [[new RegExp(`O[${APO}]`, 'g'), 'Ö'], [new RegExp(`o[${APO}]`, 'g'), 'ö'], [new RegExp(`G[${APO}]`, 'g'), 'Ğ'], [new RegExp(`g[${APO}]`, 'g'), 'ğ'],
+  [/SH|Sh/g, 'Ş'], [/sh/g, 'ş'], [/CH|Ch/g, 'Ç'], [/ch/g, 'ç']];
+const latnSeg = s => NEWL.reduce((a, [rx, r]) => a.replace(rx, r), s);
+function conv(text) {
+  if (LANG !== 'uz' || typeof text !== 'string' || !text) return text;
+  const fn = SCRIPT === 'latn' ? latnSeg : cyrlSeg;
+  let out = '', pos = 0;
+  for (const m of text.matchAll(SKIP_RE)) { out += fn(text.slice(pos, m.index)) + m[0]; pos = m.index + m[0].length; }
+  return out + fn(text.slice(pos));
+}
+
+
+
+// ===================== Ma'lumotlar =====================
+const ROLES = [
+  { key: 'talaba', icon: 'cap', t: 'Talaba', s: "o'qish, dekanat, yotoqxona" },
+  { key: 'xodim', icon: 'helmet', t: 'Xodim', s: "ish haqi, ishdan bo'shatish" },
+  { key: 'tadbirkor', icon: 'case', t: 'Tadbirkor', s: 'shartnoma, hamkor' },
+  { key: 'xaridor', icon: 'cart', t: 'Xaridor', s: 'sifatsiz tovar, xizmat' },
+  { key: 'boshqa', icon: 'user', t: 'Boshqa', s: 'fuqaro sifatida' },
+];
+const LEVELS = { oddiy: 'Oddiy', muhim: 'Muhim', jiddiy: 'Jiddiy', xavf: 'Xavf' };
+const PROMPTS = [
+  'Ish beruvchi 2 oydan beri ish haqimni bermayapti…',
+  "Telefonda notanish odam meni qo'rqitdi…",
+  'SMS keldi: kartangiz bloklandi, kodni yuboring…',
+  "Dekanatga ariza berdim, bir oydan beri javob yo'q…",
+  "Do'kondan olgan telefonim 3 kunda buzildi…",
+];
+const QUICK = [
+  { icon: 'wallet', t: 'Ish haqi berilmayapti', v: "Ish beruvchi 2 oydan beri ish haqimni bermayapti, so'rasam ishdan bo'shataman deyapti." },
+  { icon: 'phone', t: 'Telefonda tahdid', v: "Telefonda notanish odam meni so'kdi va uyingga borib o'ldiraman deb qo'rqitdi. Suhbatni yozib oldim." },
+  { icon: 'msg', t: 'Shubhali SMS', v: 'SMS keldi: kartangiz bloklandi, blokdan chiqarish uchun kodni shu raqamga yuboring. Kodni yubordim, kartamdan 3 million yechib olishdi.' },
+  { icon: 'cap', t: 'Dekanat javob bermayapti', v: "Universitetda dekanatga ariza berdim, bir oy bo'ldi javob yo'q. Qayerga shikoyat qilsam bo'ladi?" },
+  { icon: 'box', t: 'Sifatsiz tovar', v: "Do'kondan telefon oldim, 3 kunda buzildi. Sotuvchi qaytarib olmayapti, pulni qaytarmayman deydi." },
+];
+// Xavf belgilari (bot filtrining qisqa nusxasi; yakuniy tekshiruv serverda)
+const DANGER = /(\bo['ʻ‘’`]?ldir|pichoq|zo['ʻ‘’`]?rla|kaltakla|urayap|\bo['ʻ‘’`]?zimni|hushidan ket|nafas olma|qon ket|убью|бьет|нож)/i;
+
+// ===================== Yordamchilar =====================
+const state = { tab: 'home', text: '', file: null, role: null, result: null, app: null, keys: null, score: null };
+const $ = (s, r = document) => r.querySelector(s);
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'noconv') continue;
+    const cv = attrs.noconv ? (x => x) : conv;
+    if (k === 'class') n.className = v; else if (k === 'text') n.textContent = cv(String(v));
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? '' : (k === 'placeholder' || k === 'aria-label' || k === 'title') ? cv(String(v)) : v);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false)
+    n.append(c.nodeType ? c : document.createTextNode(attrs.noconv ? String(c) : conv(String(c))));
+  return n;
+}
+function ic(name, cls = '') {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i ' + cls); s.setAttribute('aria-hidden', 'true');
+  const u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#i-' + name); s.append(u); return s;
+}
+const haptic = (t = 'light') => { try { TG && TG.HapticFeedback.impactOccurred(t); } catch (e) {} };
+function toast(msg) { const t = el('div', { class: 'toast', role: 'status', text: msg }); $('#layer').append(t); setTimeout(() => t.remove(), 2400); }
+
+// ===================== Fizika: prujina (yarim-oshkor Eyler, qat'iy qadam) =====================
+// m·x'' = −k(x − x₀) − c·x',  c = 2ζ√(km). ζ < 1 — yengil tebranish, ζ = 1 — kritik so'nish.
+function spring({ from, to, v = 0, k = 420, zeta = 0.86, onStep, onDone }) {
+  if (REDUCED) { onStep(to); onDone && onDone(); return () => {}; }
+  const c = 2 * zeta * Math.sqrt(k), DT = 1 / 240;
+  let x = from, vel = v, acc = 0, last = performance.now(), raf;
+  const tick = now => {
+    acc += Math.min(0.25, (now - last) / 1000); last = now; // sekin qurilmada ham animatsiya oʻz vaqtida tugaydi
+    while (acc >= DT) { const a = -k * (x - to) - c * vel; vel += a * DT; x += vel * DT; acc -= DT; }
+    onStep(x);
+    if (Math.abs(x - to) < 0.3 && Math.abs(vel) < 2) { onStep(to); onDone && onDone(); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(raf);
+}
+
+// ===================== API (yoki demo) =====================
+async function api(path, body) {
+  if (body && body.lang === 'uz') body.script = SCRIPT;
+  if (!body && path.includes('lang=uz')) path += '&script=' + SCRIPT;
+  if (!API) return demo(path, body);
+  const r = await fetch(API + path, { method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': TG ? TG.initData : '' }, body: body ? JSON.stringify(body) : undefined });
+  let data = {}; try { data = await r.json(); } catch (e) {}
+  if (!r.ok) { const err = new Error(data.error || String(r.status)); err.status = r.status; err.data = data; throw err; }
+  return data;
+}
+// Rozilik (server 403 need_consent qaytarsa): sheet ko'rsatiladi, rozilikdan keyin amal qayta bajariladi
+function askConsent(retry) {
+  Sheet(close => [el('div', { class: 'grabber' }), el('h3', {}, L('consent')),
+    el('ul', { class: 'note', style: 'color:var(--ink-2);font-size:13.5px;padding-left:18px;display:grid;gap:6px;margin:0' },
+      L('consentItems').map(x => el('li', { text: x }))),
+    el('button', { class: 'btn primary press', onclick: async () => { try { await api('/consent', { lang: LANG }); close(retry); } catch (e) { toast(e.message); } } }, ic('check'), L('agree')),
+    el('button', { class: 'btn ghost press', onclick: () => close() }, L('disagree'))]);
+}
+const DEMO_RESULT = {
+  case_id: 12, level: 'muhim', danger: false,
+  vaziyat: "Dekanatga bergan arizangizga bir oy davomida javob kelmagan — murojaatni ko'rib chiqish muddati buzilgan.",
+  huquqlar: ["Murojaatingiz ko'rib chiqilishi borishi haqida ma'lumot olish huquqiga egasiz.",
+             "Murojaat qonunga xilof kechiktirilsa, yuqori turuvchi organga yoki sudga shikoyat qilishingiz mumkin."],
+  majburiyatlar: ["Shikoyatda dekanatga ariza bergan sanani va mazmunini aniq ko'rsating.", 'Shikoyatni qonunda belgilangan muddat ichida bering.'],
+  murojaat: [{ kimga: 'Universitet rektorati (yuqori turuvchi organ)', qanday: 'yozma ariza yoki rasmiy elektron pochta', qachon: 'imkon qadar tez' },
+             { kimga: "Ta'lim va ilm-fan vazirligi yoki prokuratura", qanday: 'my.gov.uz orqali onlayn murojaat', qachon: 'rektorat javob bermasa' }],
+  dalillar: ['Dekanatga bergan arizangiz nusxasi va qabul qilinganini tasdiqlovchi belgi.', "Javob kelmaganini ko'rsatuvchi yozishmalar."],
+  cited: [
+    { law: "Murojaatlar to'g'risidagi qonun", num: '28', link: 'https://lex.uz/uz/docs/-3336169', why: "Murojaatni ko'rib chiqish muddatlarini belgilaydi." },
+    { law: "Murojaatlar to'g'risidagi qonun", num: '22', link: 'https://lex.uz/uz/docs/-3336169', why: 'Yuqori turuvchi organga shikoyat berish muddati.' },
+    { law: "Murojaatlar to'g'risidagi qonun", num: '32', link: 'https://lex.uz/uz/docs/-3336169', why: "Murojaat ko'rib chiqilayotganda fuqaroning huquqlari." },
+  ],
+};
+const DEMO_APP = `Universitet rektoriga
+[F.I.Sh.] dan, [manzil], tel.: [telefon]
+
+ARIZA (shikoyat)
+
+Men [sana] kuni universitet dekanatiga ariza topshirdim. Ariza topshirilganiga bir oy bo'lganiga qaramay, hech qanday javob olmadim.
+
+"Jismoniy va yuridik shaxslarning murojaatlari to'g'risida"gi qonunning 28-moddasiga ko'ra murojaatlar belgilangan muddatda ko'rib chiqilishi lozim.
+
+Arizamni ko'rib chiqib, yozma javob berilishini so'rayman.
+
+Ilova: ariza nusxasi, qabul qilinganini tasdiqlovchi hujjat.
+
+[sana]                                Imzo: __________`;
+const DEMO_LAWS = [
+  ['MurQ', "Jismoniy va yuridik shaxslarning murojaatlari to'g'risidagi qonun", 39, '-3336169'], ['MK', 'Mehnat kodeksi', 593, '-6257288'],
+  ['FK-1', 'Fuqarolik kodeksi (1-qism)', 386, '-111189'], ['FK-2', 'Fuqarolik kodeksi (2-qism)', 811, '-180552'], ['JK', 'Jinoyat kodeksi', 406, '-111453'],
+  ['MJtK', "Ma'muriy javobgarlik to'g'risidagi kodeks", 674, '-97664'], ['IHHQ', "Iste'molchilarning huquqlarini himoya qilish to'g'risidagi qonun", 33, '-4704'],
+].map(([abbr, name, articles, id]) => ({ abbr, name, articles, link: 'https://lex.uz/uz/docs/' + id }));
+// Demo: vaziyat matniga qarab mos namuna javob (haqiqiy tahlil — API ulanganda)
+const DEMO_BY_TOPIC = [
+  { test: /o['ʻ‘’`]?ldir|qo['ʻ‘’`]?rqit|tahdid|so['ʻ‘’`]?kdi/i, r: {
+    case_id: 11, level: 'jiddiy', danger: true,
+    vaziyat: "Sizga telefon orqali o'ldirish bilan qo'rqitish qilingan. Bu harakatda jinoyat belgilari bo'lishi mumkin.",
+    huquqlar: ["Tahdid haqida ichki ishlar organlariga ariza berish huquqiga egasiz.", "Arizangiz ko'rib chiqilishi va natijasi haqida ma'lumot olishingiz mumkin."],
+    majburiyatlar: ["Tahdid qilgan odam bilan bahslashmang, uchrashuvga bormang.", "Suhbat yozuvini o'zgartirmasdan saqlang."],
+    murojaat: [{ kimga: "Tuman ichki ishlar bo'limi (politsiya)", qanday: 'yozma ariza yoki shaxsan', qachon: 'imkon qadar tez' },
+               { kimga: 'Prokuratura', qanday: 'yozma shikoyat', qachon: "politsiya chora ko'rmasa" }],
+    dalillar: ["Suhbat yozuvini asl faylda, o'zgartirmasdan saqlang.", "Qo'ng'iroq qilgan raqam va vaqtni skrinshot qiling."],
+    cited: [{ law: 'Jinoyat kodeksi', num: '112', link: 'https://lex.uz/uz/docs/-111453', why: "O'ldirish yoki zo'rlik ishlatish bilan qo'rqitish uchun javobgarlik." },
+            { law: "Murojaatlar to'g'risidagi qonun", num: '28', link: 'https://lex.uz/uz/docs/-3336169', why: "Murojaatni ko'rib chiqish muddatlari." }] } },
+  { test: /ish haq|maosh|ishdan bo['ʻ‘’`]?shat/i, r: {
+    case_id: 10, level: 'jiddiy', danger: false,
+    vaziyat: "Ish beruvchi 2 oydan beri ish haqini to'lamayapti va ishdan bo'shatish bilan qo'rqitmoqda.",
+    huquqlar: ["Kechiktirilgan ish haqini kechiktirilgan har bir kun uchun to'lov bilan birga talab qilishingiz mumkin.",
+               "Ish haqini talab qilganingiz uchun ishdan bo'shatilishingiz qonunga zid."],
+    majburiyatlar: ["Ish beruvchiga ish haqini talab qilib yozma ariza bering va nusxasini saqlang."],
+    murojaat: [{ kimga: 'Davlat mehnat inspeksiyasi', qanday: 'yozma ariza yoki my.gov.uz', qachon: 'imkon qadar tez' },
+               { kimga: 'Fuqarolik ishlari bo\'yicha sud', qanday: "da'vo arizasi", qachon: 'inspeksiya hal qilmasa' }],
+    dalillar: ['Mehnat shartnomasi va buyruq nusxasi.', "Bank ko'chirmasi yoki ish haqi varaqalari."],
+    cited: [{ law: 'Mehnat kodeksi', num: '333', link: 'https://lex.uz/uz/docs/-6257288', why: "Ish haqini kechiktirgani uchun ish beruvchining moddiy javobgarligi." },
+            { law: "Murojaatlar to'g'risidagi qonun", num: '28', link: 'https://lex.uz/uz/docs/-3336169', why: "Murojaatni ko'rib chiqish muddatlari." }] } },
+];
+
+// Navigator demo maʼlumotlari (faqat API ulanmaganda; haqiqiy javob — serverdan)
+const DEMO_ROUTES = [
+  { nom: { uz: 'Davlat mehnat inspeksiyasi orqali', ru: 'Через инспекцию труда', en: 'Through the labour inspectorate' }, qisqa: { uz: 'Bepul va tez: inspeksiya ish beruvchini tekshiradi.', ru: 'Бесплатно и быстро: инспекция проверит работодателя.', en: 'Free and quick: the inspectorate checks the employer.' },
+    steps: [
+      { nima: { uz: 'Ish beruvchiga ish haqini talab qilib yozma ariza bering', ru: 'Подайте работодателю письменное требование о выплате зарплаты', en: 'Give your employer a written demand for the unpaid salary' }, idora: '', olib: [], kun: null, ariza: true },
+      { nima: { uz: 'Davlat mehnat inspeksiyasiga shikoyat topshiring', ru: 'Подайте жалобу в государственную инспекцию труда', en: 'File a complaint with the state labour inspectorate' }, idora: 'davlat mehnat inspeksiyasi', olib: ['pasport', 'mehnat shartnomasi'], kun: 15, ariza: true },
+      { nima: { uz: 'Inspeksiya javobi bilan sudga murojaat qiling', ru: 'С ответом инспекции обратитесь в суд', en: 'Take the inspectorate’s reply to court' }, idora: 'fuqarolik ishlari boʻyicha sud', olib: ['inspeksiya javobi'], kun: null, ariza: true }] },
+  { nom: { uz: 'Sud orqali', ru: 'Через суд', en: 'Through the court' }, qisqa: { uz: 'Toʻgʻridan-toʻgʻri, lekin uzoqroq.', ru: 'Напрямую, но дольше.', en: 'Direct, but takes longer.' },
+    steps: [{ nima: { uz: 'Sudga daʼvo arizasi bering', ru: 'Подайте иск в суд', en: 'File a claim in court' }, idora: 'fuqarolik ishlari boʻyicha sud', olib: ['pasport'], kun: null, ariza: true }] }];
+const DEMO_NAV = { route: null, step: 0, status: null };
+function demoNavState() {
+  const pick = o => (o && typeof o === 'object' && !Array.isArray(o)) ? (o[LANG] || o.uz) : o;
+  const r = DEMO_NAV.route, rt = r !== null ? DEMO_ROUTES[r] : null, s = rt ? rt.steps[DEMO_NAV.step] : null;
+  return { case_id: 77, status: DEMO_NAV.status, level: 'jiddiy', danger: false,
+    vaziyat: { uz: 'Ish beruvchi 2 oydan beri ish haqini toʻlamayapti.', ru: 'Работодатель 2 месяца не выплачивает зарплату.', en: 'The employer has not paid the salary for 2 months.' }[LANG],
+    routes: DEMO_ROUTES.map(x => ({ nom: pick(x.nom), qisqa: pick(x.qisqa), n: x.steps.length })), route: r, step: DEMO_NAV.step,
+    lawyer_url: 'https://yandex.uz/maps/?text=' + encodeURIComponent('advokatlik byurosi'),
+    details: { huquqlar: DEMO_RESULT.huquqlar, majburiyatlar: DEMO_RESULT.majburiyatlar, dalillar: DEMO_RESULT.dalillar, murojaat: [], cited: DEMO_RESULT.cited },
+    current: s ? { nima: pick(s.nima), idora: s.idora, olib: s.olib, kun: s.kun, ariza: s.ariza, route_name: pick(rt.nom), n: rt.steps.length, i: DEMO_NAV.step + 1,
+      map_url: s.idora ? 'https://yandex.uz/maps/?text=' + encodeURIComponent(s.idora) : null } : null };
+}
+async function demo(path, body) {
+  await new Promise(r => setTimeout(r, path === '/analyze' ? 3200 : 500));
+  if (path === '/analyze') { const hit = DEMO_BY_TOPIC.find(x => x.test.test(body.text)); return { ...(hit ? hit.r : DEMO_RESULT), role: body.role }; }
+
+  // ---- Navigator demo (API ulanmaganda) ----
+  if (path === '/nav/start') return { case_id: 77, danger: DANGER.test(body.text), questions: [
+    { q: { uz: 'Yozma mehnat shartnomasi bormi?', ru: 'Есть ли письменный трудовой договор?', en: 'Do you have a written employment contract?' }[LANG],
+      opts: { uz: ['Ha, bor', 'Yoʻq', 'Bilmayman'], ru: ['Да, есть', 'Нет', 'Не знаю'], en: ['Yes', 'No', 'Not sure'] }[LANG] },
+    { q: { uz: 'Qarz qancha boʻldi?', ru: 'Какая сумма долга?', en: 'How much is owed?' }[LANG],
+      opts: { uz: ['5 mln gacha', '5–15 mln', '15 mln dan koʻp'], ru: ['До 5 млн', '5–15 млн', 'Больше 15 млн'], en: ['Under 5M', '5–15M', 'Over 15M'] }[LANG] },
+    { q: { uz: 'Oldin biror joyga murojaat qildingizmi?', ru: 'Вы уже куда-то обращались?', en: 'Have you complained anywhere yet?' }[LANG],
+      opts: { uz: ['Yoʻq', 'Ish beruvchiga', 'Inspeksiyaga'], ru: ['Нет', 'К работодателю', 'В инспекцию'], en: ['No', 'To the employer', 'To the inspectorate'] }[LANG] }] };
+  if (path === '/nav/navigate' || path.startsWith('/nav/case')) { DEMO_NAV.status = DEMO_NAV.status || 'routes'; return demoNavState(); }
+  if (path === '/nav/route') { Object.assign(DEMO_NAV, { route: body.route, step: 0, status: 'nav' }); return demoNavState(); }
+  if (path === '/nav/step') {
+    const rt = DEMO_ROUTES[DEMO_NAV.route || 0], cur = rt.steps[DEMO_NAV.step || 0]; let result = { kind: 'noop' };
+    if (body.action === 'done') {
+      if (cur.kun || (cur.ariza && cur.idora)) { DEMO_NAV.status = 'waiting'; result = { kind: 'wait', days: cur.kun || 7 }; }
+      else if (DEMO_NAV.step + 1 < rt.steps.length) { DEMO_NAV.step++; result = { kind: 'next' }; }
+      else { DEMO_NAV.status = 'route_done'; result = { kind: 'route_done' }; }
+    } else if (body.action === 'ok') { DEMO_NAV.status = 'closed'; result = { kind: 'closed' }; }
+    else if (body.action === 'wait') { DEMO_NAV.status = 'waiting'; result = { kind: 'wait', days: 3 }; }
+    else if (body.action === 'no') {
+      if (DEMO_NAV.step + 1 < rt.steps.length) { DEMO_NAV.step++; DEMO_NAV.status = 'nav'; result = { kind: 'next' }; }
+      else { DEMO_NAV.status = 'routes'; result = { kind: 'exhausted' }; } }
+    return { ...demoNavState(), result };
+  }
+  if (path === '/nav/pdf') return { ok: true };
+  if (path === '/nav/ask') return { answer: { uz: 'Arizani tuman davlat mehnat inspeksiyasiga shaxsan yoki my.gov.uz orqali topshirishingiz mumkin. Nusxasini va qabul belgisini saqlang.',
+    ru: 'Заявление можно подать в районную инспекцию труда лично или через my.gov.uz. Сохраните копию и отметку о приёме.',
+    en: 'You can submit the application to the district labour inspectorate in person or via my.gov.uz. Keep a copy and proof of receipt.' }[LANG] };
+  if (path === '/application') return { text: DEMO_APP };
+  if (path === '/escalate') return { keys: { k1: 'ok', k2: 'ok', k3: 'wait' }, score: 82 };
+  if (path === '/cases') return { cases: [
+    { id: 12, title: 'Dekanat bir oydan beri javob bermayapti', level: 'muhim', status: 'Javob berildi', date: '20.11.2026' },
+    { id: 11, title: "Telefonda o'ldirish bilan qo'rqitish", level: 'jiddiy', status: 'Yurist tekshiruvida (3-kalit)', date: '20.11.2026' },
+    { id: 9, title: 'Sifatsiz telefon qaytarilmayapti', level: 'muhim', status: 'Yopildi', date: '19.11.2026' }] };
+  if (path === '/laws') return { laws: DEMO_LAWS };
+  return {};
+}
+
+// ===================== Ekranlar =====================
+function go(tab) { state.tab = tab; render(); }
+function render() {
+  const screens = { clarify: Clarify, district: District, routes: Routes, step: Step, wait: Wait, closed: Closed, details: Details, home: Home, analyzing: Analyzing, result: Result, application: Application, keys: Keys, cases: Cases, laws: Laws, profile: Profile };
+  stopOrb(); // eski canvas DOMdan olib tashlanadi — shar har safar yangidan yaratiladi (aks holda boʻsh qoladi)
+  $('#app').replaceChildren(Header(), (screens[state.tab] || Home)());
+  renderDock();
+  if (state.tab === 'home') startOrb();
+  window.scrollTo(0, 0);
+}
+function Header() {
+  const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
+  return el('header', { class: 'top' },
+    el('div', { class: 'brand' }, el('div', { class: 'logo' }, ic('scale')),
+      el('div', {}, el('h1', { text: L('appName') }), el('small', { text: u ? L('hello', { name: u.first_name }) : L('basis') }))),
+    el('div', { class: 'top-r' }, el('span', { class: 'pill ' + (API ? 'live' : 'demo'), text: API ? L('live') : L('demo') }),
+      el('button', { class: 'top-ic press', 'aria-label': L('tabAbout'), onclick: () => { haptic(); go('profile'); } }, ic('info'))));
+}
+
+function Home() {
+  const ta = el('textarea', { id: 'ask-text', 'aria-label': L('askLabel'), maxlength: '4000', rows: '3' });
+  ta.value = state.text;
+  const typed = el('div', { class: 'typed', 'aria-hidden': 'true' }, el('span'), el('i', { class: 'caret' }));
+  const send = el('button', { class: 'send', 'aria-label': L('send'), onclick: submit }, ic('send'));
+  const fileIn = el('input', { type: 'file', id: 'ask-file', accept: 'audio/*,image/*', hidden: true });
+  const fileTag = el('span', { class: 'file-tag', text: state.file ? state.file.name : '' });
+  const sync = () => {
+    state.text = ta.value; typed.hidden = !!ta.value; send.disabled = !ta.value.trim() && !state.file;
+    ta.style.height = 'auto'; ta.style.height = Math.min(220, Math.max(78, ta.scrollHeight)) + 'px';
+  };
+  ta.addEventListener('input', sync);
+  fileIn.addEventListener('change', () => { state.file = fileIn.files[0] || null; fileTag.textContent = state.file ? state.file.name : ''; sync(); });
+  requestAnimationFrame(() => { sync(); typewriter(typed.firstChild, () => !ta.value); });
+
+  const hero = el('div', { class: 'hero' }, el('canvas', { id: 'orb', 'aria-hidden': 'true' }));
+  return el('section', { class: 'screen' },
+    hero,
+    el('div', { class: 'lead' },
+      el('h2', { text: L('heroTitle') }),
+      el('p', { text: L('heroSub') })),
+    el('div', { class: 'ask-wrap', id: 'ask' },
+      el('div', { class: 'ask-glow', 'aria-hidden': 'true' }, el('div', { class: 'ring' })),
+      el('div', { class: 'ask' }, el('div', { class: 'ring', 'aria-hidden': 'true' }),
+        el('div', { class: 'ask-inner' },
+          el('div', { class: 'field' }, ta, typed),
+          el('div', { class: 'ask-row' },
+            el('button', { class: 'chip press', onclick: () => fileIn.click() }, ic('clip'), L('attach')), fileIn, fileTag,
+            el('button', { class: 'mic press', id: 'mic', 'aria-label': L('micRec'), onclick: toggleRec }, ic('mic')), send)))),
+    el('div', { class: 'quick' }, QUICK.slice(0, 3).map((q, i) => { const it = L('quickItems')[i]; return el('button', { class: 'chip press', onclick: () => { ta.value = conv(it.v); sync(); ta.focus(); haptic(); } }, ic(q.icon), it.t); })),
+    el('p', { class: 'note', text: L('noteShort') }));
+}
+const Stats = () => el('div', { class: 'stats' },
+  el('div', { class: 'stat glass' }, el('b', { text: '2 942' }), el('span', { text: L('statArticles') })),
+  el('div', { class: 'stat glass' }, el('b', { text: '7' }), el('span', { text: L('statLaws') })),
+  el('div', { class: 'stat glass' }, el('b', { text: L('statKeysB') }), el('span', { text: L('statKeys') })));
+
+// Yozuv effekti: rAF asosida, haqiqiy vaqt bo'yicha (kadr tezligiga bog'liq emas)
+let typeRaf;
+function typewriter(node, active) {
+  cancelAnimationFrame(typeRaf);
+  let p = 0, i = 0, del = false, next = 0;
+  const step = now => {
+    if (!node.isConnected) return;
+    if (now >= next && active()) {
+      const P = L('prompts'), s = conv(P[p % P.length]);
+      i += del ? -1 : 1; node.textContent = s.slice(0, i);
+      if (!del && i >= s.length) { del = true; next = now + 1700; }
+      else if (del && i <= 0) { del = false; p = (p + 1) % L('prompts').length; next = now + 350; }
+      else next = now + (del ? 16 : 38 + Math.random() * 30);
+    }
+    typeRaf = requestAnimationFrame(step);
+  };
+  typeRaf = requestAnimationFrame(step);
+}
+
+function submit() {
+  if (!state.text.trim() && !state.file) return;
+  haptic('medium');
+  state.sosSeen = DANGER.test(state.text);
+  if (state.sosSeen) {
+    Sheet(close => [el('div', { class: 'grabber' }), el('h3', { text: L('dangerTitle') }),
+      el('div', { class: 'sos' }, ic('phone'), el('span', { text: L('dangerText') })),
+      el('button', { class: 'btn danger press', onclick: () => close(askRole) }, L('dangerBtn'))]);
+  } else askRole();
+}
+function askRole() {
+  Sheet(close => [el('div', { class: 'grabber' }), el('h3', { text: L('roleTitle') }),
+    el('p', { text: L('roleSub') }),
+    el('div', { class: 'roles' }, ROLES.map(r => el('button', { class: 'role press', onclick: () => close(() => { state.role = r.key; navStart(); }) },
+      ic(r.icon), el('b', { text: L('roles')[r.key][0] }), el('span', { text: L('roles')[r.key][1] }))))]);
+}
+
+const STEPS = ['Xavf belgilari tekshirildi', 'Soha va daraja aniqlanmoqda', 'lex.uz bazasidan moddalar qidirilmoqda', 'Javob tayyorlanmoqda', 'Har bir modda bazadan tekshirilmoqda'];
+function Analyzing() {
+  return el('section', { class: 'screen' },
+    el('div', { class: 'lead' }, el('h2', { text: L('analyzing') }), el('p', { text: L('analyzingSub') })),
+    el('div', { class: 'steps glass' }, el('div', { class: 'bar' }, el('i', { id: 'bar' })),
+      L('steps').map((s, i) => el('div', { class: 'step' + (i === 0 ? ' on' : '') }, el('span', { class: 'dot', text: i + 1 }), el('span', { text: s })))));
+}
+async function analyze() {
+  go('analyzing');
+  const nodes = [...document.querySelectorAll('.step')], bar = $('#bar');
+  const mark = k => { nodes.forEach((n, j) => { n.className = 'step' + (j < k ? ' done' : j === k ? ' on' : '');
+    n.firstChild.replaceChildren(j < k ? ic('check') : document.createTextNode(j + 1)); }); bar.style.transform = `scaleX(${Math.min(1, k / nodes.length)})`; };
+  let k = 0; mark(0);
+  const timer = setInterval(() => { if (k < nodes.length - 1) mark(++k); }, 700);
+  try {
+    const body = { text: state.text, role: state.role, lang: LANG };
+    if (state.file) Object.assign(body, { file: await toBase64(state.file), file_name: state.file.name, file_type: state.file.type });
+    const res = await api('/analyze', body);
+    clearInterval(timer); mark(nodes.length); haptic('heavy');
+    state.result = { ...res, role: state.role }; state.text = ''; state.file = null;
+    setTimeout(() => go('result'), 380);
+  } catch (e) {
+    clearInterval(timer); go('home');
+    if (e.status === 403 && e.data && e.data.need_consent) askConsent(analyze);
+    else toast(e.status && e.message ? e.message : L('errAnalyze'));
+  }
+}
+const toBase64 = f => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(f); });
+
+function Result() {
+  const r = state.result; if (!r) return Home();
+  const role = ROLES.find(x => x.key === r.role);
+  const list = (icon, title, items) => items && items.length ? el('div', { class: 'sec glass' }, el('h3', {}, ic(icon), title), el('ul', {}, items.map(t => el('li', { text: t })))) : null;
+  return el('section', { class: 'screen' },
+    el('div', { class: 'head glass' }, el('span', { class: 'badge lv-' + r.level, text: (L('levels')[r.level] || r.level) + (role ? ' · ' + L('roles')[role.key][0] : '') }), el('p', { text: r.vaziyat })),
+    r.danger ? el('div', { class: 'sos', role: 'alert' }, ic('phone'), el('span', { text: L('sos') })) : null,
+    list('shield', L('hRights'), r.huquqlar),
+    list('check', L('hDuties'), r.majburiyatlar),
+    r.murojaat && r.murojaat.length ? el('div', { class: 'sec glass' }, el('h3', {}, ic('building'), L('hWhere')),
+      r.murojaat.map((m, i) => el('div', { class: 'route' }, el('b', { text: `${i + 1}. ${m.kimga}` }), el('span', { text: [m.qanday, m.qachon].filter(Boolean).join(' · ') })))) : null,
+    list('folder', L('hProof'), r.dalillar),
+    el('div', { class: 'sec glass' }, el('h3', {}, ic('scale'), L('hLaw')),
+      r.cited.map(c => el('a', { class: 'law press', href: c.link, target: '_blank', rel: 'noopener' }, el('b', {}, `${c.law}, ${L('article', { num: c.num })}`, ic('out')), el('span', { text: c.why })))),
+    el('div', { class: 'actions' },
+      el('button', { class: 'btn primary press', onclick: openApplication }, ic('doc'), L('btnApp')),
+      ['jiddiy', 'xavf'].includes(r.level) ? el('button', { class: 'btn danger press', onclick: escalate }, ic('key'), L('btnEsc')) : null,
+      el('button', { class: 'btn ghost press', onclick: () => go('home') }, ic('plus'), L('btnNew'))),
+    el('p', { class: 'note', text: L('disclaimer') }));
+}
+
+async function openApplication() {
+  haptic(); state.app = null; go('application');
+  try { state.app = (await api('/application', { case_id: state.result.case_id, lang: LANG })).text; } catch (e) { state.app = ''; toast(e.status ? e.message : L('errApp')); }
+  if (state.tab === 'application') render();
+}
+function Application() {
+  const pre = el('pre', { class: 'doc', text: state.app === null ? L('appLoading') : state.app });
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(state.app || ''); toast(L('copied')); haptic(); }
+    catch (e) { const s = getSelection(), rg = document.createRange(); rg.selectNodeContents(pre); s.removeAllRanges(); s.addRange(rg); toast(L('selected')); }
+  };
+  return el('section', { class: 'screen' },
+    el('div', { class: 'lead' }, el('h2', { text: L('appTitle') }), el('p', { text: L('appSub') })),
+    el('div', { class: 'glass' }, pre),
+    el('div', { class: 'actions' },
+      el('button', { class: 'btn primary press', onclick: copy, disabled: !state.app }, ic('copy'), L('copy')),
+      el('button', { class: 'btn ghost press', onclick: () => go('result') }, ic('back'), L('back'))),
+    el('p', { class: 'note', text: L('appNote') }));
+}
+
+async function escalate() {
+  haptic('medium'); state.keys = { k1: 'wait', k2: 'idle', k3: 'idle' }; state.score = null; go('keys');
+  try { const r = await api('/escalate', { case_id: state.result.case_id, lang: LANG }); state.keys = r.keys; state.score = r.score; state.inBot = !!r.in_bot; }
+  catch (e) { toast(e.message || L('errEsc')); }
+  if (state.tab === 'keys') render();
+}
+function Keys() {
+  const k = state.keys || {};
+  const lab = L('keyStates');
+  const row = (id, icon, t, s) => el('div', { class: 'key ' + (k[id] || 'idle') }, el('div', { class: 'k' }, ic(k[id] === 'ok' ? 'check' : icon)),
+    el('div', {}, el('b', { text: t }), el('span', { text: s })), el('span', { class: 'state', text: lab[k[id] || 'idle'] }));
+  return el('section', { class: 'screen' },
+    el('div', { class: 'lead' }, el('h2', { text: L('escTitle') }), el('p', { text: L('escSub') })),
+    el('div', { class: 'keys glass' },
+      row('k1', 'phone', L('k1')[0], L('k1')[1]),
+      row('k2', 'spark', L('k2')[0], state.score ? L('k2score', { score: state.score }) : L('k2')[1]),
+      row('k3', 'shield', L('k3')[0], L('k3')[1])),
+    el('p', { class: 'note', text: L('escNote') }),
+    state.inBot && TG ? el('button', { class: 'btn primary press', onclick: () => TG.close() }, ic('msg'), L('toBot')) : null,
+    el('button', { class: 'btn ghost press', onclick: () => go('result') }, ic('back'), L('back')));
+}
+
+function Cases() {
+  const box = el('div', { class: 'list' }, el('p', { class: 'note', text: L('loading') }));
+  api('/cases?lang=' + LANG).then(d => box.replaceChildren(...(d.cases.length ? d.cases.map(c => el('button', { class: 'item glass press', onclick: () => openCase(c.id) },
+    el('div', { class: 'row' }, el('b', { text: c.title }), el('span', { class: 'badge lv-' + c.level, text: L('levels')[c.level] || c.level })),
+    el('div', { class: 'row' }, el('span', { text: c.status }), el('span', { class: 'mono', text: `#${c.id} · ${c.date}` }))))
+    : [el('p', { class: 'note', text: L('casesEmpty') })])))
+    .catch(() => box.replaceChildren(el('p', { class: 'note', text: L('casesErr') })));
+  return el('section', { class: 'screen' }, el('div', { class: 'lead' }, el('h2', { text: L('cases') })), box);
+}
+function Laws() {
+  const box = el('div', { class: 'list' }, el('p', { class: 'note', text: L('loading') }));
+  api('/laws?lang=' + LANG).then(d => box.replaceChildren(...d.laws.map(l => el('a', { class: 'item glass press', href: l.link, target: '_blank', rel: 'noopener' },
+    el('div', { class: 'row' }, el('b', { text: l.name }), el('span', { class: 'mono', text: l.abbr })),
+    el('div', { class: 'row' }, el('span', { text: L('articlesN', { n: l.articles.toLocaleString('ru-RU') }) }), ic('out'))))))
+    .catch(() => box.replaceChildren(el('p', { class: 'note', text: L('lawsErr') })));
+  return el('section', { class: 'screen' },
+    el('div', { class: 'lead' }, el('h2', { text: L('laws') }), el('p', { text: L('lawsSub') })), box);
+}
+function Profile() {
+  const opt = (v, icon, t) => el('button', { 'aria-pressed': String(themePref === v), onclick: () => { themePref = v; store.set('lexnav-theme', v); applyTheme(); haptic(); render(); } }, ic(icon), t);
+  return el('section', { class: 'screen' },
+    el('div', { class: 'lead' }, el('h2', { text: L('settings') })),
+    el('div', { class: 'sec glass' }, el('h3', {}, ic('auto'), L('theme')), el('div', { class: 'seg', role: 'group', 'aria-label': L('theme') }, opt('auto', 'auto', L('themeAuto')), opt('light', 'sun', L('themeLight')), opt('dark', 'moon', L('themeDark')))), el('div', { class: 'sec glass' }, el('h3', {}, ic('globe'), L('language')), el('div', { class: 'seg four', role: 'group', 'aria-label': L('language') }, LANG_CHOICES.map(([l, sc, name]) => el('button', { noconv: true, 'aria-pressed': String(LANG === l && (!sc || SCRIPT === sc)), onclick: () => { setLang(l, sc); haptic(); render(); api('/cases?lang=' + LANG).catch(() => {}); } }, name)))),
+    el('div', { class: 'sec glass' }, el('h3', {}, ic('info'), L('appName')),
+      el('p', { class: 'note', style: 'color:var(--ink-2);font-size:14px', text: L('about') })),
+    Stats(),
+    el('button', { class: 'btn ghost press', onclick: () => { haptic(); go('laws'); } }, ic('scale'), L('tabLaws')),
+    el('div', { class: 'sec glass' }, el('h3', {}, ic('lock'), L('privacy')),
+      el('ul', {}, L('privacyItems').map(x => el('li', { text: x })))),
+    el('p', { class: 'note', text: L('footer') }));
+}
+
+// ===================== Navigator (qadam-baqadam yoʻl koʻrsatish) =====================
+// Har ekranda bitta asosiy harakat; qolganlari kichik ikonkali tugmalar. Eslatmalar Telegram chatiga keladi.
+Object.assign(I18N.uz, {
+  qOf: 'Savol {i}/{n}', otherAnswer: 'Yoki oʻzingiz yozing…', next: 'Davom etish', skip: 'Oʻtkazib yuborish',
+  districtTitle: 'Qaysi tumandasiz?', districtSub: 'Yaqin idoralarni xaritada koʻrsataman.', districtPh: 'Masalan: Toshkent, Chilonzor',
+  myLocation: 'Joylashuvim', locErr: 'Joylashuvni aniqlab boʻlmadi — tuman nomini yozing.', locOk: 'Joylashuv olindi',
+  routesTitle: '{n} ta yoʻl topdim', routesSub: 'Qaysi biri bilan boramiz? Men har qadamda yoningizdaman.', recommended: 'tavsiya',
+  stepsN: '{n} qadam', details: 'Batafsil va qonun', lawyer: 'Advokat', stepOf: '{i}/{n}-qadam',
+  whereL: 'Qayerga', bringL: 'Olib boring', deadlineL: 'Javob muddati: {n} kun', done: 'Bajardim', map: 'Qanday boraman', pdf: 'Ariza PDF', printL: 'Chop etish', soonRoute: 'Yoʻnalish va transport hali qoʻshilmagan — manzillar qoʻshilgach shu yerda chiqadi.', soonPrint: 'Chop etish joylari hali qoʻshilmagan — hamkorlar qoʻshilgach shu yerda chiqadi.', donate: 'Loyihani qoʻllab-quvvatlash', soonDonate: 'Donat hali mavjud emas. Rahmat!',
+  ask: 'Savol', alt: 'Boshqa yoʻl', pdfSent: 'PDF Telegram chatga yuborildi', pdfErr: 'PDF tayyorlab boʻlmadi, birozdan soʻng qayta urinib koʻring',
+  waitTitle: 'Javobni kutamiz', waitSub: '{n} kundan soʻng Telegram’da oʻzim soʻrayman. Javob oldinroq kelsa, shu yerda belgilang.',
+  resOk: 'Hal boʻldi', resWait: 'Hali javob yoʻq', resNo: 'Rad etishdi', routeDoneTitle: 'Barcha qadamlar bajarildi', routeDoneSub: 'Vaziyat hal boʻldimi?',
+  closedTitle: 'Tabriklayman!', closedSub: 'Murojaat yopildi. Yana biror masala boʻlsa — men shu yerdaman.',
+  exhausted: 'Bu yoʻlda qadam qolmadi. Boshqa yoʻlni tanlang yoki yurist bilan maslahatlashing.',
+  askTitle: 'Savolingiz', askPh: 'Masalan: arizani qayerdan topshiraman?', askSend: 'Soʻrash', nextStepT: 'Keyingi qadam',
+  resWaitToast: '{n} kundan soʻng yana soʻrayman', noRoutes: 'Aniq yoʻl tuza olmadim. Batafsil maʼlumotni koʻring yoki yurist bilan maslahatlashing.',
+  continueCase: 'Davom ettirish',
+});
+Object.assign(I18N.ru, {
+  qOf: 'Вопрос {i} из {n}', otherAnswer: 'Или напишите свой ответ…', next: 'Продолжить', skip: 'Пропустить',
+  districtTitle: 'В каком вы районе?', districtSub: 'Покажу ближайшие учреждения на карте.', districtPh: 'Например: Ташкент, Чиланзар',
+  myLocation: 'Моя геолокация', locErr: 'Не удалось определить геолокацию — напишите район.', locOk: 'Геолокация получена',
+  routesTitle: 'Нашёл {n} пути', routesSub: 'Каким пойдём? Я буду рядом на каждом шаге.', recommended: 'рекомендую',
+  stepsN: '{n} шага', details: 'Подробнее и закон', lawyer: 'Адвокат', stepOf: 'Шаг {i} из {n}',
+  whereL: 'Куда', bringL: 'Взять с собой', deadlineL: 'Срок ответа: {n} дн.', done: 'Сделал', map: 'Как добраться', pdf: 'Заявление PDF', printL: 'Печать', soonRoute: 'Маршруты и транспорт ещё не добавлены — появятся здесь, когда добавим адреса.', soonPrint: 'Места печати ещё не добавлены — появятся здесь, когда добавим партнёров.', donate: 'Поддержать проект', soonDonate: 'Пожертвования пока недоступны. Спасибо!',
+  ask: 'Вопрос', alt: 'Другой путь', pdfSent: 'PDF отправлен в чат Telegram', pdfErr: 'Не удалось подготовить PDF, попробуйте чуть позже',
+  waitTitle: 'Ждём ответа', waitSub: 'Через {n} дн. я сам спрошу в Telegram. Если ответ придёт раньше — отметьте здесь.',
+  resOk: 'Решилось', resWait: 'Ответа пока нет', resNo: 'Отказали', routeDoneTitle: 'Все шаги выполнены', routeDoneSub: 'Ситуация решилась?',
+  closedTitle: 'Поздравляю!', closedSub: 'Обращение закрыто. Если появится другой вопрос — я здесь.',
+  exhausted: 'На этом пути шагов не осталось. Выберите другой путь или посоветуйтесь с юристом.',
+  askTitle: 'Ваш вопрос', askPh: 'Например: куда подать заявление?', askSend: 'Спросить', nextStepT: 'Следующий шаг',
+  resWaitToast: 'Спрошу снова через {n} дн.', noRoutes: 'Не удалось составить точный путь. Посмотрите подробности или посоветуйтесь с юристом.',
+  continueCase: 'Продолжить',
+});
+Object.assign(I18N.en, {
+  qOf: 'Question {i} of {n}', otherAnswer: 'Or type your own answer…', next: 'Continue', skip: 'Skip',
+  districtTitle: 'Which district are you in?', districtSub: 'I’ll show nearby offices on the map.', districtPh: 'E.g. Tashkent, Chilanzar',
+  myLocation: 'My location', locErr: 'Couldn’t get your location — please type the district.', locOk: 'Location received',
+  routesTitle: 'I found {n} paths', routesSub: 'Which one shall we take? I’ll be with you at every step.', recommended: 'recommended',
+  stepsN: '{n} steps', details: 'Details and law', lawyer: 'Lawyer', stepOf: 'Step {i} of {n}',
+  whereL: 'Where', bringL: 'Bring', deadlineL: 'Response time: {n} days', done: 'Done', map: 'Get there', pdf: 'Application PDF', printL: 'Print', soonRoute: 'Routes and transport are not added yet — they will appear here once addresses are added.', soonPrint: 'Print locations are not added yet — they will appear here once partners are added.', donate: 'Support the project', soonDonate: 'Donations are not available yet. Thank you!',
+  ask: 'Question', alt: 'Another path', pdfSent: 'The PDF was sent to your Telegram chat', pdfErr: 'Couldn’t prepare the PDF, please try again shortly',
+  waitTitle: 'Waiting for the reply', waitSub: 'In {n} days I’ll check in with you on Telegram. If the reply comes earlier, mark it here.',
+  resOk: 'Resolved', resWait: 'No reply yet', resNo: 'Refused', routeDoneTitle: 'All steps are done', routeDoneSub: 'Has the situation been resolved?',
+  closedTitle: 'Congratulations!', closedSub: 'The appeal is closed. If anything else comes up, I’m here.',
+  exhausted: 'No steps are left on this path. Choose another path or consult a lawyer.',
+  askTitle: 'Your question', askPh: 'E.g. where do I submit the application?', askSend: 'Ask', nextStepT: 'Next step',
+  resWaitToast: 'I’ll ask again in {n} days', noRoutes: 'I couldn’t build a clear path. See the details or consult a lawyer.',
+  continueCase: 'Continue',
+});
+
+const nav = { caseId: null, questions: [], qi: 0, answers: [], district: '', lat: null, lon: null, st: null, waitDays: null };
+const openUrl = url => { try { TG ? TG.openLink(url) : window.open(url, '_blank', 'noopener'); } catch (e) { window.open(url, '_blank', 'noopener'); } };
+
+async function navStart() {
+  go('analyzing');
+  const timer = progressSteps(2);
+  try {
+    const body = { text: state.text, role: state.role, lang: LANG };
+    if (state.file) Object.assign(body, { file: await toBase64(state.file), file_name: state.file.name, file_type: state.file.type });
+    const d = await api('/nav/start', body);
+    clearInterval(timer);
+    Object.assign(nav, { caseId: d.case_id, questions: d.questions || [], qi: 0, answers: [], district: '', lat: null, lon: null, st: null });
+    state.text = ''; state.file = null;
+    const next = nav.questions.length ? 'clarify' : 'district';
+    const seen = state.sosSeen; state.sosSeen = false;
+    if (d.danger && !seen) {
+      go('home');
+      Sheet(close => [el('div', { class: 'grabber' }), el('h3', { text: L('dangerTitle') }),
+        el('div', { class: 'sos' }, ic('phone'), el('span', { text: L('dangerText') })),
+        el('button', { class: 'btn danger press', onclick: () => close(() => go(next)) }, L('dangerBtn'))]);
+    } else go(next);
+  } catch (e) {
+    clearInterval(timer); go('home');
+    if (e.status === 403 && e.data && e.data.need_consent) askConsent(navStart);
+    else toast(e.status && e.message ? e.message : L('errAnalyze'));
+  }
+}
+// "Tahlil" ekranidagi bosqichlarni koʻrsatish (haqiqiy vaqtga yaqin)
+function progressSteps(upto) {
+  const nodes = [...document.querySelectorAll('.step')], bar = $('#bar');
+  let k = 0;
+  const mark = () => { nodes.forEach((n, j) => { n.className = 'step' + (j < k ? ' done' : j === k ? ' on' : '');
+    n.firstChild.replaceChildren(j < k ? ic('check') : document.createTextNode(j + 1)); }); if (bar) bar.style.transform = `scaleX(${Math.min(1, k / nodes.length)})`; };
+  mark();
+  return setInterval(() => { if (k < Math.min(upto, nodes.length - 1)) { k++; mark(); } }, 900);
+}
+
+function Clarify() {
+  const q = nav.questions[nav.qi]; if (!q) return District();
+  const input = el('input', { class: 'field-in', id: 'clar-in', placeholder: L('otherAnswer'), maxlength: '300' });
+  const answer = a => { if (a) nav.answers.push({ q: q.q, a }); nav.qi++; haptic(); go(nav.qi < nav.questions.length ? 'clarify' : 'district'); };
+  return el('section', { class: 'screen' },
+    el('div', { class: 'dots', 'aria-hidden': 'true' }, nav.questions.map((_, i) => el('i', { class: i <= nav.qi ? 'on' : '' }))),
+    el('div', { class: 'lead' }, el('p', { class: 'eyebrow', text: L('qOf', { i: nav.qi + 1, n: nav.questions.length }) }), el('h2', { text: q.q })),
+    el('div', { class: 'opts' }, (q.opts || []).map(o => el('button', { class: 'opt press', onclick: () => answer(o) }, o))),
+    el('div', { class: 'inline-in glass' }, input, el('button', { class: 'send', 'aria-label': L('next'), onclick: () => answer(input.value.trim()) }, ic('send'))),
+    el('button', { class: 'link', onclick: () => answer(null) }, L('skip')));
+}
+
+function District() {
+  const input = el('input', { class: 'field-in', id: 'dist-in', placeholder: L('districtPh'), maxlength: '80', value: nav.district });
+  const locBtn = el('button', { class: 'btn ghost press', onclick: getLocation }, ic('pin'), L('myLocation'));
+  return el('section', { class: 'screen' },
+    el('div', { class: 'hero-ic', 'aria-hidden': 'true' }, ic('pin')),
+    el('div', { class: 'lead' }, el('h2', { text: L('districtTitle') }), el('p', { text: L('districtSub') })),
+    el('div', { class: 'inline-in glass' }, input, el('button', { class: 'send', 'aria-label': L('next'), onclick: () => { nav.district = input.value.trim(); navNavigate(); } }, ic('send'))),
+    locBtn,
+    el('button', { class: 'link', onclick: () => { nav.district = ''; navNavigate(); } }, L('skip')));
+}
+function getLocation() {
+  const done = (lat, lon) => { nav.lat = lat; nav.lon = lon; haptic(); navNavigate(); };
+  const fail = () => toast(L('locErr'));
+  try {
+    const lm = TG && TG.LocationManager;
+    if (lm && lm.init) { lm.init(() => { if (lm.isLocationAvailable) lm.getLocation(loc => loc ? done(loc.latitude, loc.longitude) : fail()); else geo(); }); return; }
+  } catch (e) {}
+  geo();
+  function geo() { if (!navigator.geolocation) return fail(); navigator.geolocation.getCurrentPosition(p => done(p.coords.latitude, p.coords.longitude), fail, { timeout: 8000 }); }
+}
+
+async function navNavigate() {
+  go('analyzing');
+  const timer = progressSteps(4);
+  try {
+    nav.st = await api('/nav/navigate', { case_id: nav.caseId, answers: nav.answers, district: nav.district, lat: nav.lat, lon: nav.lon, lang: LANG });
+    clearInterval(timer); haptic('heavy');
+    go('routes');
+  } catch (e) { clearInterval(timer); go('district'); toast(e.status && e.message ? e.message : L('errAnalyze')); }
+}
+
+function Routes() {
+  const s = nav.st; if (!s) return Home();
+  return el('section', { class: 'screen' },
+    el('div', { class: 'head glass' }, el('span', { class: 'badge lv-' + s.level, text: L('levels')[s.level] || s.level }), el('p', { text: s.vaziyat })),
+    s.danger ? el('div', { class: 'sos', role: 'alert' }, ic('phone'), el('span', { text: L('sos') })) : null,
+    s.routes.length ? el('div', { class: 'lead left' }, el('h2', { text: L('routesTitle', { n: s.routes.length }) }))
+      : el('p', { class: 'note', text: L('noRoutes') }),
+    el('div', { class: 'list' }, s.routes.map((r, i) => el('button', { class: 'route-card glass press', onclick: () => chooseRoute(i) },
+      el('span', { class: 'num', text: i + 1 }),
+      el('span', { class: 'rc-body' }, el('b', { text: r.nom }),
+        el('span', { class: 'rc-meta' }, L('stepsN', { n: r.n }), i === 0 ? el('em', { text: L('recommended') }) : null)),
+      ic('back', 'chev')))),
+    el('div', { class: 'mini-row' },
+      el('button', { class: 'mini press', onclick: () => go('details') }, ic('scale'), L('details')),
+      el('button', { class: 'mini press', onclick: () => openUrl(s.lawyer_url) }, ic('user'), L('lawyer'))));
+}
+async function chooseRoute(i) {
+  haptic('medium');
+  try { nav.st = await api('/nav/route', { case_id: nav.caseId, route: i, lang: LANG }); go('step'); }
+  catch (e) { toast(e.message || L('errAnalyze')); }
+}
+
+function Step() {
+  const s = nav.st, c = s && s.current; if (!c) return Routes();
+  const pct = Math.round((c.i - 1) / c.n * 100);
+  const info = [];
+  if (c.idora) info.push(el('div', { class: 'info' }, ic('building'), el('span', {}, el('small', { text: L('whereL') }), (c.idora + (s.district ? ', ' + s.district : '')))));
+  if (c.olib && c.olib.length) info.push(el('div', { class: 'info' }, ic('folder'), el('span', {}, el('small', { text: L('bringL') }), c.olib.join(', '))));
+  if (c.kun) info.push(el('div', { class: 'info' }, ic('clock'), el('span', {}, L('deadlineL', { n: c.kun }),
+    c.manba && c.manba.link ? el('a', { class: 'src', href: c.manba.link, target: '_blank', rel: 'noopener',
+      onclick: e => { e.preventDefault(); openUrl(c.manba.link); } }, `${c.manba.law}, ${L('article', { num: c.manba.num })}`) : null)));
+  return el('section', { class: 'screen' },
+    el('div', { class: 'step-top' }, el('span', { class: 'eyebrow', text: c.route_name }), el('span', { class: 'mono', text: L('stepOf', { i: c.i, n: c.n }) })),
+    el('div', { class: 'bar' }, el('i', { style: `transform:scaleX(${pct / 100 || 0.04})` })),
+    el('div', { class: 'step-card glass' }, el('h2', { text: c.nima }), info.length ? el('div', { class: 'infos' }, info) : null),
+    el('button', { class: 'btn primary press big', onclick: () => stepAction('done') }, ic('check'), L('done')),
+    el('div', { class: 'icon-row' },
+      c.idora ? el('button', { class: 'icb press', onclick: () => toast(L('soonRoute')) }, ic('pin'), el('span', { text: L('map') })) : null,
+      c.ariza ? el('button', { class: 'icb press', onclick: sendPdf }, ic('doc'), el('span', { text: L('pdf') })) : null,
+      c.ariza ? el('button', { class: 'icb press', onclick: () => toast(L('soonPrint')) }, ic('building'), el('span', { text: L('printL') })) : null,
+      el('button', { class: 'icb press', onclick: askSheet }, ic('msg'), el('span', { text: L('ask') }))),
+    el('button', { class: 'link', onclick: () => go('routes') }, L('alt')));
+}
+
+let navBusy = false;
+async function stepAction(action) {
+  if (navBusy) return;
+  navBusy = true;
+  const btns = [...document.querySelectorAll('#app .screen button')]; btns.forEach(b => { b.disabled = true; });
+  haptic(action === 'done' ? 'medium' : 'light');
+  try {
+    const r = await api('/nav/step', { case_id: nav.caseId, action, step: nav.st ? nav.st.step : undefined, lang: LANG });
+    nav.st = r;
+    const k = r.result && r.result.kind;
+    if (k === 'wait') { nav.waitDays = r.result.days; if (action === 'wait') toast(L('resWaitToast', { n: r.result.days })); go('wait'); }
+    else if (k === 'next') go('step');
+    else if (k === 'route_done') go('wait');
+    else if (k === 'closed') go('closed');
+    else if (k === 'exhausted') { toast(L('exhausted')); go('routes'); }
+  } catch (e) { toast(e.message || L('errAnalyze')); btns.forEach(b => { b.disabled = false; }); }
+  finally { navBusy = false; }
+}
+
+function Wait() {
+  const s = nav.st || {}, routeDone = s.status === 'route_done';
+  return el('section', { class: 'screen center' },
+    el('div', { class: 'hero-ic', 'aria-hidden': 'true' }, ic(routeDone ? 'check' : 'clock')),
+    el('div', { class: 'lead' }, el('h2', { text: routeDone ? L('routeDoneTitle') : L('waitTitle') }),
+      el('p', { text: routeDone ? L('routeDoneSub') : L('waitSub', { n: nav.waitDays || 7 }) })),
+    el('button', { class: 'btn primary press big', onclick: () => stepAction('ok') }, ic('check'), L('resOk')),
+    el('div', { class: 'two' },
+      el('button', { class: 'btn ghost press', onclick: () => stepAction('wait') }, L('resWait')),
+      el('button', { class: 'btn ghost press', onclick: () => stepAction('no') }, L('resNo'))));
+}
+
+function Closed() {
+  return el('section', { class: 'screen center' },
+    el('div', { class: 'hero-ic good', 'aria-hidden': 'true' }, ic('check')),
+    el('div', { class: 'lead' }, el('h2', { text: L('closedTitle') }), el('p', { text: L('closedSub') })),
+    el('button', { class: 'btn primary press big', onclick: () => go('home') }, ic('plus'), L('btnNew')),
+    el('button', { class: 'link', onclick: () => toast(L('soonDonate')) }, L('donate')));
+}
+
+function Details() {
+  const s = nav.st; if (!s || !s.details) return Routes();
+  const d = s.details;
+  const list = (icon, title, items) => items && items.length ? el('div', { class: 'sec glass' }, el('h3', {}, ic(icon), title), el('ul', {}, items.map(x => el('li', { text: x })))) : null;
+  return el('section', { class: 'screen' },
+    list('shield', L('hRights'), d.huquqlar), list('check', L('hDuties'), d.majburiyatlar), list('folder', L('hProof'), d.dalillar),
+    d.cited.length ? el('div', { class: 'sec glass' }, el('h3', {}, ic('scale'), L('hLaw')),
+      d.cited.map(c => el('a', { class: 'law press', href: c.link, target: '_blank', rel: 'noopener' }, el('b', {}, `${c.law}, ${L('article', { num: c.num })}`, ic('out')), el('span', { text: c.why })))) : null,
+    el('p', { class: 'note', text: L('disclaimer') }),
+    el('button', { class: 'btn ghost press', onclick: () => go(s.current ? 'step' : 'routes') }, ic('back'), L('back')));
+}
+
+async function sendPdf() {
+  haptic();
+  try { await api('/nav/pdf', { case_id: nav.caseId, lang: LANG }); toast(L('pdfSent')); } catch (e) { toast(L('pdfErr')); }
+}
+function askSheet() {
+  Sheet(close => {
+    const ta = el('textarea', { class: 'field-in', rows: '3', placeholder: L('askPh'), maxlength: '800' });
+    const out = el('div', { class: 'note', style: 'color:var(--ink);font-size:14px' });
+    const send = el('button', { class: 'btn primary press', onclick: async () => {
+      if (!ta.value.trim()) return;
+      send.disabled = true; out.textContent = L('loading');
+      try { const r = await api('/nav/ask', { case_id: nav.caseId, question: ta.value.trim(), lang: LANG });
+        out.replaceChildren(el('div', { text: r.answer }), el('small', { class: 'disc', text: r.disclaimer || L('disclaimer') })); }
+      catch (e) { out.textContent = e.message || L('errAnalyze'); }
+      send.disabled = false;
+    } }, ic('send'), L('askSend'));
+    return [el('div', { class: 'grabber' }), el('h3', {}, L('askTitle')), el('div', { class: 'inline-in glass' }, ta), send, out];
+  });
+}
+async function openCase(id) {
+  haptic();
+  try {
+    nav.st = await api('/nav/case?id=' + id + '&lang=' + LANG);
+    Object.assign(nav, { caseId: id, questions: [], qi: 0, answers: [], district: nav.st.district || '', lat: null, lon: null, waitDays: null });
+    const st = nav.st.status;
+    go(st === 'closed' ? 'closed' : st === 'waiting' || st === 'checking' || st === 'route_done' ? 'wait' : nav.st.current && st === 'nav' ? 'step' : 'routes');
+  } catch (e) { toast(e.message || L('casesErr')); }
+}
+
+// Bir qatorli maydonda Enter — yonidagi yuborish tugmasini bosadi (savol, tuman)
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing || !(e.target instanceof HTMLInputElement) || !e.target.classList.contains('field-in')) return;
+  const btn = e.target.parentElement && e.target.parentElement.querySelector('.send');
+  if (btn) { e.preventDefault(); btn.click(); }
+});
+
+
+// ===================== Ovozli xabar (mikrofon → WAV 16 kHz mono → serverda matnga) =====================
+const rec = { on: false, stream: null, ctx: null, proc: null, chunks: [], rate: 48000, t0: 0, timer: null };
+async function toggleRec() {
+  if (rec.on) return stopRec(true);
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast(L('micNo'));
+  try { rec.stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { return toast(L('micDenied')); }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  rec.ctx = new AC(); rec.rate = rec.ctx.sampleRate; rec.chunks = [];
+  const src = rec.ctx.createMediaStreamSource(rec.stream);
+  rec.proc = rec.ctx.createScriptProcessor(4096, 1, 1);
+  rec.proc.onaudioprocess = e => rec.chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  src.connect(rec.proc); rec.proc.connect(rec.ctx.destination);
+  rec.on = true; rec.t0 = Date.now(); haptic('medium');
+  const b = $('#mic'); if (b) { b.classList.add('on'); b.replaceChildren(ic('stop'), el('span', { class: 'mono', id: 'mic-t', text: '0:00' })); b.setAttribute('aria-label', L('micStop')); }
+  rec.timer = setInterval(() => { const sec = Math.floor((Date.now() - rec.t0) / 1000), t = $('#mic-t');
+    if (t) t.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; if (sec >= 120) stopRec(true); }, 250);
+}
+function stopRec(send) {
+  clearInterval(rec.timer); rec.on = false;
+  try { rec.proc.disconnect(); rec.stream.getTracks().forEach(t => t.stop()); rec.ctx.close(); } catch (e) {}
+  const b = $('#mic'); if (b) { b.classList.remove('on'); b.replaceChildren(ic('mic')); b.setAttribute('aria-label', L('micRec')); }
+  const n = rec.chunks.reduce((a, c) => a + c.length, 0);
+  if (!send) return;
+  if (n < rec.rate * 0.8) return toast(L('micShort'));
+  const pcm = new Float32Array(n); let o = 0; for (const c of rec.chunks) { pcm.set(c, o); o += c.length; }
+  rec.chunks = [];
+  state.file = new File([wav16k(pcm, rec.rate)], 'ovoz.wav', { type: 'audio/wav' });
+  haptic('heavy'); submit();
+}
+// Pastga diskretlash (oʻrtacha qiymat) + 16-bit PCM WAV sarlavhasi
+function wav16k(x, inRate) {
+  const R = 16000, k = inRate / R, len = Math.floor(x.length / k), buf = new ArrayBuffer(44 + len * 2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + len * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true); v.setUint32(24, R, true); v.setUint32(28, R * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, len * 2, true);
+  for (let i = 0; i < len; i++) {
+    let s = 0, a = Math.floor(i * k), b2 = Math.min(x.length, Math.floor((i + 1) * k)); for (let j = a; j < b2; j++) s += x[j];
+    const y = Math.max(-1, Math.min(1, s / Math.max(1, b2 - a))); v.setInt16(44 + i * 2, y < 0 ? y * 0x8000 : y * 0x7fff, true);
+  }
+  return buf;
+}
+
+// ===================== Sheet: prujina + tortib yopish =====================
+let sheetOpen = null;
+function Sheet(build) {
+  if (sheetOpen) sheetOpen.close();
+  const scrim = el('div', { class: 'scrim' });
+  const sheet = el('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' });
+  let y = 0, h = 0, stop = () => {}, closing = false;
+  const set = v => { y = v; sheet.style.transform = `translate3d(0, ${v}px, 0)`; scrim.style.opacity = String(Math.max(0, 1 - v / h)); };
+  const close = after => {
+    if (closing) return; closing = true; stop();
+    let done = false;
+    const finish = () => { if (done) return; done = true; stop(); scrim.remove(); sheet.remove(); sheetOpen = null; after && after(); };
+    stop = spring({ from: y, to: h + 40, k: 520, zeta: 1, onStep: set, onDone: finish });
+    setTimeout(finish, 450); // zaxira: kadrlar sekinlashsa ham keyingi qadam kechikmaydi
+  };
+  sheet.append(...build(close));
+  scrim.addEventListener('click', () => close());
+  $('#layer').append(scrim, sheet);
+  h = sheet.getBoundingClientRect().height; set(h);
+  stop = spring({ from: h, to: 0, k: 380, zeta: 0.82, onStep: set });
+  // Tortish: tezlik so'nggi 80 ms dagi siljishdan hisoblanadi (px/s); |v| > 900 yoki 35% dan ko'p — yopiladi
+  let startY = 0, startT = 0, samples = [];
+  sheet.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    stop(); startY = e.clientY - y; samples = [[e.timeStamp, e.clientY]]; sheet.setPointerCapture(e.pointerId);
+  });
+  sheet.addEventListener('pointermove', e => {
+    if (!sheet.hasPointerCapture(e.pointerId)) return;
+    const d = e.clientY - startY; set(d < 0 ? d * 0.25 : d); // yuqoriga — qarshilik (rubber-band)
+    samples.push([e.timeStamp, e.clientY]); while (samples.length > 2 && e.timeStamp - samples[0][0] > 80) samples.shift();
+  });
+  sheet.addEventListener('pointerup', e => {
+    if (!sheet.hasPointerCapture(e.pointerId)) return;
+    const [t0, y0] = samples[0], v = (e.clientY - y0) / Math.max(1, e.timeStamp - t0) * 1000;
+    if (y > h * 0.35 || v > 900) close(); else stop = spring({ from: y, to: 0, v, k: 380, zeta: 0.82, onStep: set });
+  });
+  sheetOpen = { close };
+  haptic();
+}
+
+// Til tanlash oynasi (birinchi ochilishda)
+function pickLanguage() {
+  Sheet(close => [el('div', { class: 'grabber' }), el('h3', {}, 'Tilni tanlang · Выберите язык · Choose a language'),
+    el('div', { class: 'roles' }, Object.keys(I18N).map(l => el('button', { class: 'role press', onclick: () => close(() => { setLang(l); render(); }) },
+      ic('globe'), el('b', { text: LANG_NAMES[l] }), el('span', { text: { uz: 'Davom etish', ru: 'Продолжить', en: 'Continue' }[l] }))))]);
+}
+
+// ===================== Dock =====================
+function renderDock() {
+  const active = state.tab === 'laws' ? 'profile' : ['analyzing', 'result', 'application', 'keys', 'clarify', 'district', 'routes', 'step', 'wait', 'closed', 'details'].includes(state.tab) ? 'home' : state.tab;
+  const tab = (key, icon, label) => el('button', { class: 'tab' + (active === key ? ' active' : ''), 'aria-current': active === key ? 'page' : null, onclick: () => { haptic(); go(key); } }, ic(icon), label);
+  $('#dock').replaceChildren(tab('home', 'home', L('tabHome')),
+    el('button', { class: 'fab', 'aria-label': L('fab'), onclick: () => { haptic('medium'); go('home'); requestAnimationFrame(() => $('#ask-text') && $('#ask-text').focus()); } },
+      el('div', { class: 'ring', 'aria-hidden': 'true' }), el('span', {}, ic('plus'))),
+    tab('cases', 'cases', L('tabCases')));
+}
+
+// ===================== 3D suyuq shar (GPU shader) =====================
+// Vertex shader sirtni tovlanadi: r = 1 + A·f(n, t). Normal chekli ayirmalar bilan (ε = 0.01) qayta hisoblanadi.
+// Fragment: Schlick Fresnel F = F0 + (1 − F0)(1 − n·v)^5, F0 = 0.04; iridessensiya — kosinus palitra; Blinn-Phong yaltirash.
+const VERT = `
+uniform float uTime; uniform float uAmp; varying vec3 vN; varying vec3 vV; varying float vF;
+float f(vec3 p){ return 0.55*sin(p.x*3.1+uTime*1.6) + 0.45*sin(p.y*3.7+uTime*1.25) + 0.35*sin(p.z*4.3+uTime*1.9) + 0.30*sin((p.x+p.y+p.z)*2.3-uTime*1.1); }
+vec3 disp(vec3 n){ return n*(1.0+uAmp*f(n)); }
+void main(){
+  vec3 n = normalize(position);
+  vec3 t = normalize(cross(n, abs(n.y) < 0.99 ? vec3(0.0,1.0,0.0) : vec3(1.0,0.0,0.0)));
+  vec3 b = cross(n, t);
+  vec3 p0 = disp(n), p1 = disp(normalize(n + t*0.01)), p2 = disp(normalize(n + b*0.01));
+  vec3 nn = normalize(cross(p1 - p0, p2 - p0)); if (dot(nn, n) < 0.0) nn = -nn;
+  vF = f(n);
+  vec4 mv = modelViewMatrix * vec4(p0 * 1.32, 1.0);
+  vN = normalize(normalMatrix * nn); vV = normalize(-mv.xyz);
+  gl_Position = projectionMatrix * mv;
+}`;
+const FRAG = `
+uniform vec3 cA; uniform vec3 cB; uniform vec3 cC; uniform float uLight; varying vec3 vN; varying vec3 vV; varying float vF;
+void main(){
+  float ndv = clamp(dot(vN, vV), 0.0, 1.0);
+  float F = 0.04 + 0.96 * pow(1.0 - ndv, 5.0);
+  float h = 1.0 - ndv + vF * 0.08;
+  vec3 iri = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + h * 0.85 + 0.55));
+  vec3 base = mix(cA, cB, smoothstep(0.0, 1.0, h));
+  vec3 L = normalize(vec3(-0.45, 0.75, 0.55)); vec3 H = normalize(L + vV);
+  float spec = pow(max(dot(vN, H), 0.0), 72.0);
+  float diff = 0.62 + 0.38 * max(dot(vN, L), 0.0);
+  vec3 col = base * diff * mix(0.55, 0.78, uLight) + iri * F * mix(0.85, 0.55, uLight) + cC * pow(1.0 - ndv, 3.0) * 0.35 + vec3(spec) * 0.85;
+  gl_FragColor = vec4(col, 1.0);
+}`;
+let orb = null;
+function startOrb() {
+  const canvas = $('#orb'); if (!canvas || orb) return;
+  const fallback = () => canvas.replaceWith(el('div', { class: 'orb-fallback', 'aria-hidden': 'true' }));
+  if (!window.THREE) return fallback();
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' }); } catch (e) { return fallback(); }
+  const SIZE = 264; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); renderer.setSize(SIZE, SIZE, false);
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50); camera.position.z = 6.3;
+  const uniforms = { uTime: { value: 0 }, uAmp: { value: 0.07 }, uLight: { value: 0 },
+    cA: { value: new THREE.Color() }, cB: { value: new THREE.Color() }, cC: { value: new THREE.Color() } };
+  const geo = new THREE.IcosahedronGeometry(1, 20);
+  const blob = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG }));
+  scene.add(blob);
+  // Ikki halqa (orbita). Radiuslar shar radiusi rb ga proporsional: R₁ = 1.30·rb, R₂ = R₁·φ^¼ (φ — oltin nisbat).
+  // Qalinlik va ko'rsatkich o'lchami ham R ga proporsional. Qiyaliklar har ochilishda tasodifiy (lekin chetga to'liq
+  // yonbosh bo'lmasligi uchun 55°–75° oralig'ida). Ko'rsatkich tezligi Kepler qonuni bo'yicha: ω ∝ R^(−3/2).
+  // Ko'rsatkich (R,0,0) nuqtada, pivot +z atrofida aylanadi → tezlik vektori +y, konus ham +y ga (urinma bo'ylab).
+  const PHI = (1 + Math.sqrt(5)) / 2, RB = 1.32, AMAX = 0.2;
+  const R = [RB * 1.30, RB * 1.30 * Math.pow(PHI, 0.25)];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const mats = [new THREE.MeshStandardMaterial({ color: 0xf5b83d, metalness: 1, roughness: 0.28, emissive: 0x2a1800 }),
+                new THREE.MeshStandardMaterial({ color: 0xffd98a, metalness: 1, roughness: 0.22, emissive: 0x241a06 })];
+  const W1 = 0.6;
+  const orbits = R.map((r, i) => {
+    const g = new THREE.Group();
+    g.rotation.set(rnd(0.96, 1.31), rnd(-0.45, 0.45), rnd(0, Math.PI * 2)); scene.add(g);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.011 * r, 12, 220), mats[i]); g.add(ring);
+    const pivot = new THREE.Group(); pivot.rotation.z = rnd(0, Math.PI * 2); g.add(pivot);
+    const needle = new THREE.Mesh(new THREE.ConeGeometry(0.042 * r, 0.19 * r, 20), mats[i]); needle.position.set(r, 0, 0); pivot.add(needle);
+    return { g, ring, pivot, r, w: W1 * Math.pow(R[0] / r, 1.5) * (i % 2 ? -1 : 1) };
+  });
+  // Halqalarning o'zi ham aylanadi (giroskop kabi): har biri tasodifiy birlik o'q a atrofida, Ω ∈ [0.22, 0.42] rad/s.
+  // Ikkinchi halqa o'qi birinchisiga teskari (−a) va ±25° gacha tasodifiy og'gan; burchak tezliklari ham Kepler nisbatida.
+  const randAxis = () => { const u = rnd(-1, 1), th = rnd(0, Math.PI * 2), s = Math.sqrt(1 - u * u); return new THREE.Vector3(s * Math.cos(th), s * Math.sin(th), u); };
+  const a1 = randAxis();
+  const tiltAway = new THREE.Quaternion().setFromAxisAngle(randAxis().cross(a1).normalize(), rnd(-0.44, 0.44));
+  const axes = [a1, a1.clone().negate().applyQuaternion(tiltAway).normalize()];
+  const spin0 = rnd(0.22, 0.42);
+  orbits.forEach((o, i) => { o.axis = axes[i]; o.spin = spin0 * Math.pow(R[0] / o.r, 1.5); });
+  const dq = new THREE.Quaternion();
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55)); const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-2, 3, 4); scene.add(sun);
+
+  // Kamerani sig'dirish. Halqalar istalgan holatga aylanadi, shuning uchun hamma narsa radiusi ρ = max(1.06·R₂, rb·(1+Amax))
+  // bo'lgan sfera ichida. Sferaning proyeksiyasi: sin α = ρ/d (α — ko'rinish konusining yarim burchagi).
+  // Shart tan α = ρ/√(d² − ρ²) ≤ T, T = tan(fov/2)/1.08 (8% zaxira) → d = ρ·√(1 + 1/T²). Bu holatga bog'liq emas.
+  const rho = Math.max(R[1] * 1.06, RB * (1 + AMAX));
+  const T = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / 1.08;
+  camera.position.z = rho * Math.sqrt(1 + 1 / (T * T));
+
+  // Fizika: aylanish burchak tezligi ω (rad/s) bazaviy tezlikka eksponensial qaytadi; tortish ω ga impuls beradi.
+  // Tebranish amplitudasi A — so'nuvchi prujina: A'' = −k(A − A₀) − cA', k = 60, ζ = 0.32.
+  const P = { rot: 0, w: 0.28, w0: 0.28, A: 0.07, vA: 0, A0: 0.07, k: 60, zeta: 0.32 };
+  const cA_ = 2 * P.zeta * Math.sqrt(P.k);
+  let dragX = null, lastX = 0, lastT = 0;
+  canvas.addEventListener('pointerdown', e => { dragX = e.clientX; lastX = e.clientX; lastT = e.timeStamp; canvas.setPointerCapture(e.pointerId); P.vA += 0.9; haptic(); });
+  canvas.addEventListener('pointermove', e => { if (dragX === null) return; const dt = Math.max(1, e.timeStamp - lastT) / 1000;
+    P.w = (e.clientX - lastX) / dt * 0.012; lastX = e.clientX; lastT = e.timeStamp; });
+  const end = () => { dragX = null; }; canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+
+  const DT = 1 / 120; let acc = 0, last = performance.now(), t = 0, raf = 0, running = true;
+  const frame = now => {
+    raf = requestAnimationFrame(frame);
+    const dtFrame = Math.min(0.1, (now - last) / 1000); acc += dtFrame; last = now;
+    while (acc >= DT) {
+      if (dragX === null) P.w += (P.w0 - P.w) * (1 - Math.exp(-1.6 * DT)); // ω → ω₀, τ ≈ 0.6 s
+      P.rot += P.w * DT;
+      const a = -P.k * (P.A - P.A0) - cA_ * P.vA; P.vA += a * DT; P.A += P.vA * DT;
+      t += DT; acc -= DT;
+    }
+    uniforms.uTime.value = t; uniforms.uAmp.value = Math.max(0.02, Math.min(0.2, P.A));
+    blob.rotation.y = P.rot; blob.rotation.x = Math.sin(t * 0.4) * 0.18;
+    for (const o of orbits) {
+      o.pivot.rotation.z += o.w * dtFrame;                              // ko'rsatkich halqa bo'ylab
+      o.g.quaternion.premultiply(dq.setFromAxisAngle(o.axis, o.spin * dtFrame)); // halqaning o'zi (dunyo o'qi atrofida)
+    }
+    renderer.render(scene, camera);
+  };
+  const setRunning = on => { if (on === running) return; running = on; if (on) { last = performance.now(); raf = requestAnimationFrame(frame); } else cancelAnimationFrame(raf); };
+  const io = new IntersectionObserver(([en]) => setRunning(en.isIntersecting && !document.hidden)); io.observe(canvas);
+  const vis = () => setRunning(!document.hidden); document.addEventListener('visibilitychange', vis);
+  const setTheme = dark => {
+    uniforms.cA.value.set(dark ? '#1b1236' : '#8f72ff'); uniforms.cB.value.set(dark ? '#0d3a52' : '#3cc4e4');
+    uniforms.cC.value.set(dark ? '#f5b83d' : '#d38f12'); uniforms.uLight.value = dark ? 0 : 1;
+  };
+  setTheme(isDark());
+  if (REDUCED) { renderer.render(scene, camera); running = false; } else raf = requestAnimationFrame(frame);
+  orb = { setTheme, stop() { cancelAnimationFrame(raf); io.disconnect(); document.removeEventListener('visibilitychange', vis);
+    orbits.forEach(o => { o.ring.geometry.dispose(); o.pivot.children[0].geometry.dispose(); }); mats.forEach(m => m.dispose()); renderer.dispose(); geo.dispose(); } };
+}
+function stopOrb() { if (orb) { orb.stop(); orb = null; } }
+
+applyTheme();
+render();
+// Til birinchi ochilishda soʻralmaydi: standart — oʻzbek (kirill); oʻzgartirish — sozlamalarda
+</script>

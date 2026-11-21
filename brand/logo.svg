@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Huquqiy Navigator: kompas + adolat tarozisi. Ranglar: navy #0B2545, oltin #C9A227, oq -->
+  <rect width="1024" height="1024" fill="#0B2545"/>
+
+  <!-- Kompas halqalari -->
+  <circle cx="512" cy="512" r="404" fill="none" stroke="#C9A227" stroke-width="16"/>
+  <circle cx="512" cy="512" r="372" fill="none" stroke="#C9A227" stroke-width="3" opacity="0.55"/>
+
+  <!-- Kompas yulduzi (fon, yumshoq) -->
+  <g fill="#173B6E">
+    <polygon points="512,150 548,476 512,512 476,476"/>
+    <polygon points="512,874 548,548 512,512 476,548"/>
+    <polygon points="150,512 476,476 512,512 476,548"/>
+    <polygon points="874,512 548,476 512,512 548,548"/>
+  </g>
+  <g fill="#122F59">
+    <polygon points="290,290 524,486 512,512 486,524"/>
+    <polygon points="734,290 538,524 512,512 500,486"/>
+    <polygon points="290,734 486,500 512,512 524,538"/>
+    <polygon points="734,734 500,538 512,512 538,500"/>
+  </g>
+
+  <!-- Halqadagi yo'nalish belgilari -->
+  <g fill="#C9A227">
+    <polygon points="512,92 530,128 494,128"/>
+    <polygon points="932,512 896,530 896,494"/>
+    <polygon points="512,932 494,896 530,896"/>
+    <polygon points="92,512 128,494 128,530"/>
+  </g>
+
+  <!-- Tarozi: shimol strelkasi ustun bo'lib tushadi -->
+  <polygon points="512,176 548,404 476,404" fill="#FFFFFF"/>
+  <polygon points="476,404 548,404 530,452 494,452" fill="#C9A227"/>
+  <rect x="500" y="440" width="24" height="270" fill="#C9A227"/>
+  <path d="M432 760 L592 760 L568 712 L456 712 Z" fill="#C9A227"/>
+  <rect x="404" y="760" width="216" height="18" rx="9" fill="#C9A227"/>
+
+  <!-- Shayin -->
+  <rect x="292" y="446" width="440" height="16" rx="8" fill="#C9A227"/>
+  <circle cx="512" cy="454" r="24" fill="#0B2545" stroke="#C9A227" stroke-width="10"/>
+
+  <!-- Chap pallasi -->
+  <g stroke="#C9A227" stroke-width="6" fill="none" stroke-linecap="round">
+    <line x1="300" y1="462" x2="236" y2="610"/>
+    <line x1="300" y1="462" x2="364" y2="610"/>
+    <line x1="724" y1="462" x2="660" y2="610"/>
+    <line x1="724" y1="462" x2="788" y2="610"/>
+  </g>
+  <path d="M220 610 L380 610 Q376 676 300 676 Q224 676 220 610 Z" fill="#C9A227"/>
+  <path d="M644 610 L804 610 Q800 676 724 676 Q648 676 644 610 Z" fill="#C9A227"/>
+  <circle cx="300" cy="458" r="10" fill="#FFFFFF"/>
+  <circle cx="724" cy="458" r="10" fill="#FFFFFF"/>
+</svg>

@@ -11,7 +11,7 @@ Yangi yozuv eng yuqoriga yoziladi. Tartib: `ISH_TARTIBI.md`.
 - **Qayta yasash:** `python prezentatsiya/build_slides.py` (python-pptx, pillow kerak).
 - **Ochiq savol:**
   - 3-slayddagi statistika havolalarini taqdimotdan oldin tekshirish kerak.
-  - Shaʼbona va Mirsoat tajribasi foydalanuvchi soʻzidan talqin qilingan — tasdiqlansin.
+  - Jamoa tajribasi (8-slayd) — Islom tasdiqladi ✅.
 - **2-noutbuk uchun:** kodga taʼsiri yoʻq. Bot 14:00 checkpointda ishlab turishi kerak.
 
 ## 2026-11-21 — Bot serveri 2-noutbukka koʻchdi

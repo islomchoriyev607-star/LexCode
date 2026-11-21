@@ -55,7 +55,7 @@ Mini App ──► webapp/index.html (bitta fayl: HTML + CSS + JS, Three.js shar
 
 ## Lokal ishga tushirish (Windows)
 ```bash
-git clone https://github.com/<akkaunt>/LexCode.git
+git clone https://github.com/islomchoriyev607-star/LexCode.git
 cd LexCode
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt

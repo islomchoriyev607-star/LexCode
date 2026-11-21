@@ -8,6 +8,7 @@ import html
 import json
 import logging
 import time
+from types import SimpleNamespace
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
@@ -21,6 +22,7 @@ log = logging.getLogger('lexnav.keys')
 router = Router()
 DAILY_LIMIT = 3
 MIN_SCORE = 50
+K2_MAX_TRIES = 3  # 2-kalit past ball bergach aniqlashtirish soni
 ADMIN = (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR)
 
 SCORE_SYSTEM = ("Sen Yuridik klinika uchun murojaatlarni oldindan saralovchisan. Murojaatning ishonchliligini baholaysan: "
@@ -62,6 +64,8 @@ async def on_escalate(c: CallbackQuery) -> None:
     if case['status'] in ('k2_wait', 'k3_wait', 'sent', 'rejected'):
         await c.bot.send_message(uid, t(lang, 'ESC_ALREADY'))
         return
+    if case['status'] == 'k2_more':
+        store.set_pending(uid, None)  # 1-kalitdan qayta boshlanadi
     if config.CLINIC_CHAT_ID is None or config.AUTHORITY_CHAT_ID is None:
         await c.bot.send_message(uid, t(lang, 'ESC_NOT_CONFIGURED'))
         return
@@ -102,7 +106,30 @@ async def on_liability(c: CallbackQuery) -> None:
     if case is None or case['status'] != 'k1_wait' or not store.has_phone(uid):
         return
     store.set_status(case['id'], 'k2_wait')
-    msg = await c.bot.send_message(uid, t(lang, 'K2_CHECKING'))
+    await run_k2(c.bot, uid, case, lang)
+
+
+async def add_details(m: Message, case_id: int, lang: str) -> None:
+    """2-kalit past ball bergach foydalanuvchi yozgan aniqlashtirish: murojaatga qoʻshiladi va ball qayta hisoblanadi
+    (yangi murojaat ochilmaydi)."""
+    uid = m.from_user.id
+    store.set_pending(uid, None)
+    case = store.get_case(case_id, uid)
+    if case is None or case['status'] != 'k2_more':
+        await m.answer(t(lang, 'CASE_GONE'))
+        return
+    if case['text'].count('Qoʻshimcha maʼlumot:') >= K2_MAX_TRIES:  # K2 "oʻtguncha urin" eshigiga aylanmasin
+        store.set_status(case_id, 'answered')
+        await m.answer(t(lang, 'K2_TRIES'))
+        return
+    store.append_text(case_id, m.text.strip()[:3000])
+    store.set_status(case_id, 'k2_wait')
+    await run_k2(m.bot, uid, store.get_case(case_id, uid), lang)
+
+
+async def run_k2(bot: Bot, uid: int, case: dict, lang: str) -> None:
+    msg = await bot.send_message(uid, t(lang, 'K2_CHECKING'))
+    c = SimpleNamespace(bot=bot)
     try:
         out = await llm.chat(SCORE_SYSTEM, SCORE_USER.format(text=case['text'][:5000], kind=case['kind']),
                              model=config.MODEL_FAST, json_mode=True, max_tokens=400)
@@ -115,7 +142,9 @@ async def on_liability(c: CallbackQuery) -> None:
         return
     store.set_score(case['id'], score)
     if score < MIN_SCORE:
-        store.set_status(case['id'], 'answered')
+        # Murojaat yopilmaydi: keyingi matn shu murojaatga qoʻshiladi va 2-kalit qayta tekshiriladi
+        store.set_status(case['id'], 'k2_more')
+        store.set_pending(uid, {'case': case['id'], 'stage': 'k2_more'})
         missing = '\n'.join(f'• {esc(x)}' for x in (s.get('yetishmaydi') or [])[:4] if isinstance(x, str))
         await msg.edit_text(t(lang, 'K2_LOW', score=score, reason=esc(s.get('sabab')), missing=missing or '—'))
         return
@@ -218,7 +247,8 @@ async def inactivity_watcher(bot: Bot) -> None:
     while True:
         try:
             now = time.time()
-            for case in store.stale_cases(('jiddiy', 'xavf'), 'answered', now - wait):
+            for case in (store.stale_cases(('jiddiy', 'xavf'), 'answered', now - wait)
+                         + store.stale_cases(('jiddiy', 'xavf'), 'k2_more', now - wait)):
                 lang = store.lang(case['user_id'])
                 store.set_status(case['id'], 'reminded')
                 await bot.send_message(case['user_id'], t(lang, 'REMINDER', id=case['id']),

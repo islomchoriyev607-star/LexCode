@@ -960,7 +960,7 @@ function Result() {
       r.cited.map(c => el('a', { class: 'law press', href: c.link, target: '_blank', rel: 'noopener' }, el('b', {}, `${c.law}, ${L('article', { num: c.num })}`, ic('out')), el('span', { text: c.why })))),
     el('div', { class: 'actions' },
       el('button', { class: 'btn primary press', onclick: openApplication }, ic('doc'), L('btnApp')),
-      ['jiddiy', 'xavf'].includes(r.level) ? el('button', { class: 'btn danger press', onclick: escalate }, ic('key'), L('btnEsc')) : null,
+      el('button', { class: 'btn danger press', onclick: () => escalate(state.result.case_id) }, ic('key'), L('btnEsc')),
       el('button', { class: 'btn ghost press', onclick: () => go('home') }, ic('plus'), L('btnNew'))),
     el('p', { class: 'note', text: L('disclaimer') }));
 }
@@ -985,9 +985,9 @@ function Application() {
     el('p', { class: 'note', text: L('appNote') }));
 }
 
-async function escalate() {
+async function escalate(caseId) {
   haptic('medium'); state.keys = { k1: 'wait', k2: 'idle', k3: 'idle' }; state.score = null; go('keys');
-  try { const r = await api('/escalate', { case_id: state.result.case_id, lang: LANG }); state.keys = r.keys; state.score = r.score; state.inBot = !!r.in_bot; }
+  try { const r = await api('/escalate', { case_id: caseId, lang: LANG }); state.keys = r.keys; state.score = r.score; state.inBot = !!r.in_bot; }
   catch (e) { toast(e.message || L('errEsc')); }
   if (state.tab === 'keys') render();
 }
@@ -1184,7 +1184,8 @@ function Routes() {
       ic('back', 'chev')))),
     el('div', { class: 'mini-row' },
       el('button', { class: 'mini press', onclick: () => go('details') }, ic('scale'), L('details')),
-      el('button', { class: 'mini press', onclick: () => openUrl(s.lawyer_url) }, ic('user'), L('lawyer'))));
+      el('button', { class: 'mini press', onclick: () => openUrl(s.lawyer_url) }, ic('user'), L('lawyer'))),
+    el('button', { class: 'btn danger press', onclick: () => escalate(nav.caseId) }, ic('key'), L('btnEsc')));
 }
 async function chooseRoute(i) {
   haptic('medium');

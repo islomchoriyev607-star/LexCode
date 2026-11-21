@@ -71,11 +71,12 @@ def office_kind(idora: str) -> tuple[str, str] | None:
     x = (idora or '').lower()
     if any(w in x for w in ('fhdyo', 'fhdyo', 'fuqarolik holati', 'загс', 'фҳдё', 'фхдё')):
         return 'fhdyo', ''
-    if re.search(r'\bsud|суд', x):
+    if re.search(r'\bsud(?!x)|(?<![а-яё])суд', x):  # "Государственный", "sudxoʻrlik" sud emas
         sub = ('fuqarolik' if 'fuqaro' in x or 'граждан' in x else 'jinoyat' if 'jinoy' in x or 'уголов' in x else
-               'mamuriy' if 'muriy' in x or 'админ' in x else 'iqtisodiy' if 'iqtisod' in x or 'эконом' in x else '')
+               'mamuriy' if 'muriy' in x or 'админ' in x else 'iqtisodiy' if 'iqtisod' in x or 'эконом' in x else
+               'fuqarolik')  # turi aytilmagan ("tuman sudi", "mehnat sudi") — fuqarolik ishlari sudi
         return 'sud', sub
-    if any(w in x for w in ('ichki ishlar', 'iib', 'iiv', 'militsiya', 'politsiya', 'профилакт', 'profilaktika', '102', 'милиц', 'ички ишлар')):
+    if any(w in x for w in ('ichki ishlar', 'iib', 'iiv', 'militsiya', 'politsiya', 'профилакт', 'profilaktika', '102', 'милиц', 'ички ишлар', 'овд', 'полиц', 'мвд')):
         return 'iib', 'tayanch' if any(w in x for w in ('profilaktika', 'inspektor', 'профилакт', 'mahalla')) else 'bolim'
     return None
 
@@ -90,7 +91,9 @@ def find_office(case: dict, idora: str) -> dict | None:
         pool = [o for o in pool if o['sub'] == k[1]] or pool
     if case.get('lat') is not None and case.get('lon') is not None:
         la, lo = case['lat'], case['lon']
-        return min(pool, key=lambda o: (o['lat'] - la) ** 2 + ((o['lon'] - lo) * 0.75) ** 2)  # cos(41°) ≈ 0.75
+        km = lambda o: 111 * ((o['lat'] - la) ** 2 + ((o['lon'] - lo) * 0.75) ** 2) ** 0.5  # cos(41°) ≈ 0.75
+        best = min(pool, key=km)
+        return best if km(best) <= 25 else None  # baza faqat Toshkent: uzoqda — umumiy qidiruv
     d = normalize(case.get('district') or '')
     if d:
         for o in pool:
@@ -394,8 +397,7 @@ def routes_kb(case: dict, level: str, lang: str) -> InlineKeyboardMarkup:
         star = f' · {t(lang, "RECOMMENDED")}' if i == 0 else ''
         rows.append([B(f'{i + 1}. {rt["nom"]}{star}', f'rt:{case["id"]}:{i}')])
     rows.append([B(t(lang, 'BTN_DETAILS'), f'det:{case["id"]}'), B(t(lang, 'BTN_LAWYER'), url=map_url(case, t(lang, 'LAWYER_QUERY')))])
-    if level in ('jiddiy', 'xavf'):
-        rows.append([keys.escalate_kb(case['id'], lang)])
+    rows.append([keys.escalate_kb(case['id'], lang)])  # har darajada: idoraga baribir faqat 3 kalitdan keyin ketadi
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

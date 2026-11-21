@@ -326,18 +326,18 @@ async def escalate(request: web.Request) -> web.Response:
 
 
 STATUS = {'uz': {'awaiting_role': 'Rol tanlanmagan', 'analyzing': 'Tahlil qilinmoqda', 'answered': 'Javob berildi',
-             'k1_wait': '1-kalit kutilmoqda', 'k2_wait': '2-kalit tekshirilmoqda', 'k3_wait': 'Yurist tekshiruvida (3-kalit)',
+             'k1_wait': '1-kalit kutilmoqda', 'k2_wait': '2-kalit tekshirilmoqda', 'k2_more': '2-kalit: aniqlashtirish kutilmoqda', 'k3_wait': 'Yurist tekshiruvida (3-kalit)',
              'sent': 'Idoraga yuborildi', 'rejected': 'Yurist rad etdi', 'reminded': 'Holati so\'raldi',
              'urgent': 'Klinikada shoshilinch', 'closed': 'Yopildi'},
           'ru': {'awaiting_role': 'Роль не выбрана', 'analyzing': 'Анализируется', 'answered': 'Ответ дан', 'k1_wait': 'Ожидается ключ 1',
-                 'k2_wait': 'Проверка ключа 2', 'k3_wait': 'На проверке у юриста (ключ 3)', 'sent': 'Направлено в орган',
+                 'k2_wait': 'Проверка ключа 2', 'k2_more': 'Ключ 2: ждём уточнения', 'k3_wait': 'На проверке у юриста (ключ 3)', 'sent': 'Направлено в орган',
                  'rejected': 'Отклонено юристом', 'reminded': 'Запрошен статус', 'urgent': 'Срочно в клинике', 'closed': 'Закрыто'},
           'en': {'awaiting_role': 'Role not chosen', 'analyzing': 'Analysing', 'answered': 'Answered', 'k1_wait': 'Awaiting key 1',
-                 'k2_wait': 'Key 2 check', 'k3_wait': 'Lawyer review (key 3)', 'sent': 'Sent to the authority',
+                 'k2_wait': 'Key 2 check', 'k2_more': 'Key 2: clarification needed', 'k3_wait': 'Lawyer review (key 3)', 'sent': 'Sent to the authority',
                  'rejected': 'Declined by lawyer', 'reminded': 'Status requested', 'urgent': 'Urgent at the clinic', 'closed': 'Closed'}}
 
 
-KEY_STATES = {'k1_wait', 'k2_wait', 'k3_wait', 'sent', 'rejected', 'urgent', 'reminded'}
+KEY_STATES = {'k1_wait', 'k2_wait', 'k2_more', 'k3_wait', 'sent', 'rejected', 'urgent', 'reminded'}
 NAV_STATUS = {'uz': {'routes': 'Yoʻl tanlanmagan', 'nav': 'Yoʻlda', 'waiting': 'Javob kutilmoqda', 'checking': 'Javob soʻraldi',
                      'route_done': 'Yoʻl yakunlandi', 'closed': 'Hal boʻldi'},
               'ru': {'routes': 'Путь не выбран', 'nav': 'В пути', 'waiting': 'Ожидается ответ', 'checking': 'Запрошен ответ',

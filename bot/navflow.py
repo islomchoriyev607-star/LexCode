@@ -22,6 +22,7 @@ from aiogram.types import (BufferedInputFile, CallbackQuery, InlineKeyboardButto
 from . import config, keys, llm, pipeline, render, search, store
 from .i18n import law_name, t
 from .script import convert as convert_script
+from .textnorm import normalize
 
 log = logging.getLogger('lexnav.nav')
 router = Router()
@@ -40,11 +41,67 @@ def B(text: str, data: str = None, url: str = None) -> InlineKeyboardButton:
 
 def map_url(case: dict, query: str) -> str:
     """Yandex xaritada qidiruv: joylashuv boʻlsa — uning atrofida, aks holda tuman nomi bilan."""
-    q = query if not case.get('district') else f"{case['district']} {query}"
-    url = f'https://yandex.uz/maps/?text={quote(q)}'
+    # Tuman nomi soʻrovga qoʻshilmaydi: sinovda "Chilonzor tumani Mehnat inspeksiyasi" → "Hech narsa topilmadi".
+    # Hudud ll (joylashuv) bilan beriladi; boʻlmasa Yandex telefon joylashuvidan foydalanadi.
+    url = f'https://yandex.uz/maps/?text={quote(query)}'
     if case.get('lat') is not None and case.get('lon') is not None:
         url += f"&ll={case['lon']:.6f},{case['lat']:.6f}&z=14"
     return url
+
+
+
+def route_url(case: dict, dest: str) -> str:
+    """Idoraga borish. Bazada (sud / IIB / FHDYO) mos idora topilsa — uning koordinatasigacha jamoat transporti
+    marshruti (rtt=mt). Aks holda — atrofdagi idoralar qidiruvi. Matn bilan rtext=~… ishlatilmaydi: sinovda
+    "Mehnat inspeksiyasi" Fargʻonadagi "Mehnat mahallasi" deb topildi (12 soatlik yoʻl)."""
+    o = find_office(case, dest)
+    if o is None:
+        return map_url(case, dest)
+    frm = f"{case['lat']:.6f},{case['lon']:.6f}" if case.get('lat') is not None and case.get('lon') is not None else ''
+    return f"https://yandex.uz/maps/?rtext={frm}~{o['lat']},{o['lon']}&rtt=mt"
+
+
+# ---------- Idoralar bazasi (tools/build_offices.py: OpenStreetMap, Toshkent) ----------
+_OFF_PATH = pathlib.Path(__file__).resolve().parent.parent / 'data' / 'offices.json'
+OFFICES: list[dict] = json.loads(_OFF_PATH.read_text(encoding='utf-8')) if _OFF_PATH.exists() else []
+
+
+def office_kind(idora: str) -> tuple[str, str] | None:
+    """AI yozgan idora nomi → (tur, kichik tur). Bazada yoʻq turlar (hokimiyat, inspeksiya…) → None."""
+    x = (idora or '').lower()
+    if any(w in x for w in ('fhdyo', 'fhdyo', 'fuqarolik holati', 'загс', 'фҳдё', 'фхдё')):
+        return 'fhdyo', ''
+    if re.search(r'\bsud|суд', x):
+        sub = ('fuqarolik' if 'fuqaro' in x or 'граждан' in x else 'jinoyat' if 'jinoy' in x or 'уголов' in x else
+               'mamuriy' if 'muriy' in x or 'админ' in x else 'iqtisodiy' if 'iqtisod' in x or 'эконом' in x else '')
+        return 'sud', sub
+    if any(w in x for w in ('ichki ishlar', 'iib', 'iiv', 'militsiya', 'politsiya', 'профилакт', 'profilaktika', '102', 'милиц', 'ички ишлар')):
+        return 'iib', 'tayanch' if any(w in x for w in ('profilaktika', 'inspektor', 'профилакт', 'mahalla')) else 'bolim'
+    return None
+
+
+def find_office(case: dict, idora: str) -> dict | None:
+    """Eng yaqin mos idora: joylashuv boʻlsa — masofa boʻyicha, boʻlmasa — tuman nomi boʻyicha. Topilmasa None."""
+    k = office_kind(idora)
+    if not k or not OFFICES:
+        return None
+    pool = [o for o in OFFICES if o['tur'] == k[0]]
+    if k[1]:
+        pool = [o for o in pool if o['sub'] == k[1]] or pool
+    if case.get('lat') is not None and case.get('lon') is not None:
+        la, lo = case['lat'], case['lon']
+        return min(pool, key=lambda o: (o['lat'] - la) ** 2 + ((o['lon'] - lo) * 0.75) ** 2)  # cos(41°) ≈ 0.75
+    d = normalize(case.get('district') or '')
+    if d:
+        for o in pool:
+            if o['tuman'] and normalize(o['tuman']).split()[0] in d:
+                return o
+    return None
+
+
+def office_info(case: dict, idora: str) -> dict | None:
+    o = find_office(case, idora)
+    return {'nom': o['nom'], 'manzil': o['manzil'], 'tuman': o['tuman'], 'route_url': route_url(case, idora)} if o else None
 
 
 # ---------- PDF ----------
@@ -280,6 +337,7 @@ def state(case: dict, lang: str) -> dict:
            'route': case.get('route'), 'step': case.get('step'),
            'lawyer_url': map_url(case, t(lang, 'LAWYER_QUERY')),
            'print_url': map_url(case, t(lang, 'PRINT_QUERY')),
+           'lat': case.get('lat'), 'lon': case.get('lon'),
            'next_check': case.get('next_check')}
     cited = data.get('cited', [])
     out['details'] = {'huquqlar': ans.get('huquqlar', []), 'majburiyatlar': ans.get('majburiyatlar', []),
@@ -293,7 +351,8 @@ def state(case: dict, lang: str) -> dict:
         rt = rts[ri]
         s = rt['steps'][min(case['step'] or 0, len(rt['steps']) - 1)]
         out['current'] = {**s, 'route_name': rt['nom'], 'n': len(rt['steps']), 'i': (case['step'] or 0) + 1,
-                          'map_url': map_url(case, s['idora']) if s['idora'] else None, 'manba': manba_info(s, lang)}
+                          'map_url': route_url(case, s['idora']) if s['idora'] else None, 'manba': manba_info(s, lang),
+                      'office': office_info(case, s['idora']) if s['idora'] else None}
     return out
 
 
@@ -360,7 +419,10 @@ def step_view(case: dict, lang: str) -> tuple[str, InlineKeyboardMarkup]:
     s = rt['steps'][case['step']]
     lines = [t(lang, 'STEP_HEAD', route=esc(rt['nom']), i=case['step'] + 1, n=len(rt['steps'])), '', f'<b>{esc(s["nima"])}</b>']
     if s['idora']:
-        lines.append(t(lang, 'STEP_WHERE', x=esc(s['idora'] + (f", {case['district']}" if case.get('district') else ''))))
+        o = find_office(case, s['idora'])
+        where = f"{s['idora']} — {o['nom']}" + (f", {o['manzil']}" if o['manzil'] else '') if o else \
+            s['idora'] + (f", {case['district']}" if case.get('district') else '')
+        lines.append(t(lang, 'STEP_WHERE', x=esc(where)))
     if s['olib']:
         lines.append(t(lang, 'STEP_BRING', x=esc(', '.join(s['olib']))))
     if s['kun']:
@@ -373,8 +435,8 @@ def step_kb(case: dict, more: bool = False) -> InlineKeyboardMarkup:
     lang, cid = store.lang(case['user_id']), case['id']
     s = case['routes'][case['route']]['steps'][case['step']]
     if more:
-        rows = [[B(t(lang, 'BTN_MAP'), f'soon:route')]] if s['idora'] else []
-        rows += [[B(t(lang, 'BTN_PRINT'), 'soon:print')]] if s['ariza'] else []
+        rows = [[B(t(lang, 'BTN_MAP'), url=route_url(case, s['idora']))]] if s['idora'] else []
+        rows += [[B(t(lang, 'BTN_PRINT'), url=map_url(case, t(lang, 'PRINT_QUERY')))]] if s['ariza'] else []
         rows += [[B(t(lang, 'BTN_ASK'), f'ask:{cid}')], [B(t(lang, 'BTN_ALT'), f'alt:{cid}')], [B(t(lang, 'BTN_LESS'), f'more:{cid}:0')]]
         return InlineKeyboardMarkup(inline_keyboard=rows)
     row2 = [B(t(lang, 'BTN_PDF'), f'pdf:{cid}')] if s['ariza'] else []
@@ -626,7 +688,7 @@ async def send_pdf(bot: Bot, uid: int, case_id: int, lang: str) -> bool:
             return False
         if msg:
             await msg.delete()
-        kb = InlineKeyboardMarkup(inline_keyboard=[[B(t(lang, 'BTN_PRINT'), 'soon:print')]])
+        kb = InlineKeyboardMarkup(inline_keyboard=[[B(t(lang, 'BTN_PRINT'), url=map_url(case, t(lang, 'PRINT_QUERY')))]])
         await bot.send_document(uid, BufferedInputFile(pdf, filename=f'Ariza_{case_id}.pdf'), caption=t(lang, 'PDF_CAPTION', id=case_id),
                                 reply_markup=kb)
         return True
